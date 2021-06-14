@@ -6,6 +6,7 @@ A storage tiering SDK example was implemented with CloudTier Storage Tiering SDK
 # Cloud Archiving Solution for Unstructured Data
 
 Cloud archiving is the process of moving data to secondary storage in the cloud, the potential benefits of cloud archiving include lower costs and easier access, no interruption and change to your existing applications and infrastructure. Automatically archive, manage and secure all your organization’s files to the cloud, transparently access your archived
+
 ![loudTier Storage Tiering Solution](https://www.easefilter.com/images/CloudTier.png)
 
 The example can generate some stub files. To handle the read request of the stub file, we need to register the callback function for the file system filter driver. When the stub file was accessed, the callback function will be invoked, the callback function will retrieve the data from the remote server and send back to the filter driver.
