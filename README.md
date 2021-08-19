@@ -9,7 +9,7 @@ Cloud archiving is the process of moving data to secondary storage in the cloud,
 
 ![loudTier Storage Tiering Solution](https://www.easefilter.com/images/CloudTier.png)
 
-## CloudTier demo is a simple C# Windows forms application, to demo how to use the transparent storage tiering SDK. 
+## CloudTier example is a simple C# Windows forms application, to demo how to use the transparent storage tiering SDK. 
 The example can generate some stub files. To handle the read request of the stub file, we need to register the callback function for the file system filter driver. When the stub file was accessed, the callback function will be invoked, the callback function will retrieve the data from the remote server and send back to the filter driver.
 
 ## How to run the CloudTier demo?
