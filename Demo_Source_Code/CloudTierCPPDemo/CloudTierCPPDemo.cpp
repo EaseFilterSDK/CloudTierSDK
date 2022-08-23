@@ -74,7 +74,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//Purchase a license key with the link: http://www.EaseFilter.com/Order.htm
     //Email us to request a trial key: info@EaseFilter.com //free email is not accepted.
 
-	char*	registerKey = "*****************************";
+	char*	registerKey = "***************************************************";
 
 	if(argc <= 1)
 	{
@@ -151,7 +151,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			//this the demo how to use the stub file API.
 			FilterDriverUnitTest();
 
-			printf("\r\n\r\n\r\nTo do more test, you can copy your test files to folder c:\\filterTest\\cacheFolder,\r\nthe same stub file associated to the test file will be created in folder c:\\filterTest\\testStubFileFolder,\r\nyou can open the stub file in testStubFileFolder.\r\n\r\n\r\n."); 
+			printf("\r\n\r\n\r\nTo do more test, you can copy your test files to folder c:\\CloudTierUnitTest\\sourceFileFolder,\r\nthe same stub file associated to the test file will be created in folder c:\\CloudTierUnitTest\\testStubFileFolder,\r\nyou can open the stub file in testStubFileFolder.\r\n\r\n\r\n."); 
 
 			system("pause");
 
@@ -176,55 +176,42 @@ int _tmain(int argc, _TCHAR* argv[])
 BOOL
 DownloadCacheFile(  
 	IN		PMESSAGE_SEND_DATA pSendMessage,
-	IN OUT	PMESSAGE_REPLY_DATA pReplyMessage)
+	IN OUT	PMESSAGE_REPLY_DATA pReplyMessage,
+	IN		BOOL rehydrateStubFile)
 {
-	//for our test, we only assume that if the file exist in the cache folder, then this is our test files,
+	//for our test, we only assume that if the file exist in the sourceFile folder, then this is our test files,
 	//we will process it, or we return false;
-	WCHAR* fileName = NULL;
-	WCHAR* cacheFileName = (PWCHAR)pReplyMessage->DataBuffer;
-	WCHAR* cacheFolder = GetCacheFolder();
+	WCHAR* sourceFileName = (PWCHAR)pSendMessage->DataBuffer;
 
-	for(int i = pSendMessage->FileNameLength/2 -1; i > 0; i--)
+	printf("Get the source file name %ws from the tag data.\n",sourceFileName);
+
+	if(GetFileAttributes(sourceFileName) != INVALID_FILE_ATTRIBUTES)
 	{
-		if( pSendMessage->FileName[i] == (WCHAR)'\\')
+		if(rehydrateStubFile)
 		{
-			fileName = &(pSendMessage->FileName[i+1]);
-			break;
+			//if you want to rehydrate the file please return this flag
+			pReplyMessage->FilterStatus = REHYDRATE_FILE_VIA_CACHE_FILE;
 		}
-	}
+		else
+		{
+			pReplyMessage->FilterStatus = CACHE_FILE_WAS_RETURNED;
+		}
 
-	printf("get file name %ws\n",fileName);
-
-	memset(cacheFileName,0,BLOCK_SIZE);
-
-	memcpy(cacheFileName,cacheFolder,2*wcslen(cacheFolder));
-
-	cacheFileName[wcslen(cacheFolder)] = (WCHAR)'\\';
-	memcpy((PUCHAR)cacheFileName + 2*wcslen(cacheFolder) + 2,fileName,(int)2*wcslen(fileName));
-
-	printf("construct the new cache file name %ws\n",cacheFileName);
-
-	if(GetFileAttributes(cacheFileName) != INVALID_FILE_ATTRIBUTES)
-	{
-		//if you want to rehydrate the file please return this flag
-		//pReplyMessage->FilterStatus = REHYDRATE_FILE_VIA_CACHE_FILE;
-
-		pReplyMessage->FilterStatus = CACHE_FILE_WAS_RETURNED;
 		pReplyMessage->ReturnStatus = STATUS_SUCCESS;
 		
-		ULONG dataLength = (ULONG)wcslen(cacheFileName)*2;
+		ULONG dataLength = (ULONG)wcslen(sourceFileName)*2;
 
 		//set your actual return data length here.
 		pReplyMessage->DataBufferLength = dataLength;
-		memcpy(pReplyMessage->DataBuffer,cacheFileName,dataLength);
+		memcpy(pReplyMessage->DataBuffer,sourceFileName,dataLength);
 
-		printf("\nCopy cache file %ws length:%d\n",cacheFileName,dataLength);
+		printf("\nReturn whole cache file %ws FilterStatus:%0x to the filter driver\n",sourceFileName,pReplyMessage->FilterStatus);
 
 		return TRUE;
 	}
 	else
 	{
-		PrintErrorMessage( L"Download cache file failed.",0); 
+		PrintErrorMessage( L"Get the source file failed.\n\n",0); 
 		return FALSE;
 	}
 }
@@ -277,18 +264,27 @@ MessageCallback(
 
 		printf("\nTag data length:%d   \nData:%s\n\n",pSendMessage->DataBufferLength,pSendMessage->DataBuffer);
 
+		//There are two types of stub file read from the filter driver:
+		//1. MESSAGE_TYPE_RESTORE_FILE_TO_CACHE:
+		//When the stub file was written in first time, the filter driver needs to restore the whole file first,you need to create 
+		//a cache file and return to the filter driver,the filter driver will rehydrate the stub file with the cache file data.
+
+		//For the memory mapped file open( for example open file with notepad in local computer),it requires to download the whole 
+		//cache file and return it to filter driver, the filter driver will read the cache file data.
+
+		//2. MESSAGE_TYPE_RESTORE_BLOCK_OR_FILE: 
+		//For this stub file read request type, you can return the requested block data to filter driver, or you can return
+		//the whole cache file to filter driver, if you return whole cache file, the filter driver will read data from the 
+		//cache file, if you return the whole cache. 
+		//
+		//Return filter status, there are three return status you can return:
+		//1. BLOCK_DATA_WAS_RETURNED: return the rquested block data to the filter driver, if you want to read the sepecific blocks of the data.
+		//2. CACHE_FILE_WAS_RETURNED: return the cache file to the filter driver if the soure data was downloaded completely to a cache file.
+		//3. REHYDRATE_FILE_VIA_CACHE_FILE: the stub file will be rehydrated if the soure data was downloaded completely to a cache file.
 
 		if(	MESSAGE_TYPE_RESTORE_FILE_TO_CACHE == pSendMessage->MessageType	)
 		{
-			//for the first write request, the filter driver needs to restore the whole file first,
-			//here we need to create a cache file and return to the filter driver,
-			//the filter driver will restore the stub file with the cache file data.
-
-			//for memory mapping file open( for example open file with notepad in local computer,
-			//it also needs to download the whole cache file and return it to filter driver,
-			//the filter driver will read the cache file data, but it won't restore the stub file.
-
-			ret = DownloadCacheFile(pSendMessage,pReplyMessage);
+			ret = DownloadCacheFile(pSendMessage,pReplyMessage,false);
 			if(!ret)
 			{
 				
@@ -299,22 +295,25 @@ MessageCallback(
 		}
 		else if ( MESSAGE_TYPE_RESTORE_BLOCK_OR_FILE == pSendMessage->MessageType )
 		{
-			//for read request, you can return block data to filter driver, or you can return
-			//the whole cache file to filter driver, if you return whole cache file, the filter driver
-			//will read data from cache file, it won't send read request again till next file open.
-
-			if( IsRestoreFileTestFolder(pSendMessage->FileName))
+			if( IsRehydrateTestFile(pSendMessage->FileName))
 			{
-				ret = DownloadCacheFile(pSendMessage,pReplyMessage);
+				ret = DownloadCacheFile(pSendMessage,pReplyMessage,true);
 				if(!ret)
-				{
-					
+				{					
 					PrintLastErrorMessage( L"DownloadCacheFile failed.",__LINE__);
-
 					pReplyMessage->ReturnStatus = STATUS_UNSUCCESSFUL;
 				}
 			}
-			else if ( IsBlockTestFolder(pSendMessage->FileName))
+			else if( IsRestoreCacheTestFile(pSendMessage->FileName))
+			{
+				ret = DownloadCacheFile(pSendMessage,pReplyMessage,false);
+				if(!ret)
+				{					
+					PrintLastErrorMessage( L"DownloadCacheFile failed.",__LINE__);
+					pReplyMessage->ReturnStatus = STATUS_UNSUCCESSFUL;
+				}
+			}
+			else if ( IsBlockTestFile(pSendMessage->FileName))
 			{
 				LONGLONG readOffset = pSendMessage->Offset;
 				ULONG	readLength = pSendMessage->Length;
@@ -354,10 +353,14 @@ MessageCallback(
 			}
 			else
 			{
-				//handle the test file
-				ret = DownloadCacheFile(pSendMessage,pReplyMessage);
-
+				ret = DownloadCacheFile(pSendMessage,pReplyMessage,false);
+				if(!ret)
+				{					
+					PrintLastErrorMessage( L"DownloadCacheFile failed.",__LINE__);
+					pReplyMessage->ReturnStatus = STATUS_UNSUCCESSFUL;
+				}
 			}
+					
 		}
 
 	}

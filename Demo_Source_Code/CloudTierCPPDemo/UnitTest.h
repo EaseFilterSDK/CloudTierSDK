@@ -20,10 +20,13 @@ CHAR*
 GetTestData();
 
 BOOL
-IsBlockTestFolder(WCHAR* fileName );
+IsRehydrateTestFile(WCHAR* fileName );
 
 BOOL
-IsRestoreFileTestFolder(WCHAR* fileName );
+IsBlockTestFile(WCHAR* fileName );
+
+BOOL
+IsRestoreCacheTestFile(WCHAR* fileName );
 
 WCHAR*
 GetCacheFile();

@@ -244,6 +244,33 @@ namespace EaseFilter.CommonObjects
               bool overwriteIfExist,
               ref IntPtr fileHandle);
 
+        /// <summary>
+        /// Create stub file.
+        /// </summary>
+        /// <param name="fileName">the stub file name to be created</param>
+        /// <param name="fileSize">if it is 0 and the file exist,it will use the current file size.</param>
+        /// <param name="fileAttributes">if it is 0 and the file exist, it will use the current file attributes.</param>
+        /// <param name="tagDataLength">the length of the reparse point tag data</param>
+        /// <param name="tagData">the reparse point tag data</param>
+        /// <param name="creationTime">set the creation time of the stub file if it is not 0</param>
+        /// <param name="lastWriteTime">set the last write time of the stub file if it is not 0</param>
+        /// <param name="lastAccessTime">set the last access time of the stub file if it is not 0</param>
+        /// <param name="overwriteIfExist">overwrite the existing file if it is true and the file exist. </param>
+        /// <param name="fileHandle">the return file handle of the stub file</param>
+        /// <returns>return true if the stub file was created successfully.</returns>
+        [DllImport("FilterAPI.dll", SetLastError = true)]
+        public static extern bool CreateStubFileEx(
+             [MarshalAs(UnmanagedType.LPWStr)]string fileName,
+             long fileSize,
+              uint fileAttributes,
+              uint tagDataLength,
+              IntPtr tagData,
+              long creationTime,
+              long lastWriteTime,
+              long lastAccessTime,
+              bool overwriteIfExist,
+              ref IntPtr fileHandle);
+
 
         [DllImport("FilterAPI.dll", SetLastError = true)]
         public static extern bool GetTagData(
@@ -401,23 +428,24 @@ namespace EaseFilter.CommonObjects
 
             try
             {
-                if (!FilterAPI.IsDriverServiceRunning())
+                if (Utils.IsDriverChanged())
                 {
+                    //uninstall or install driver needs the Admin permission.
                     FilterAPI.UnInstallDriver();
 
+                    //wait for 3 seconds for the uninstallation completed.
+                    System.Threading.Thread.Sleep(3000);
+                }
+
+                if (!FilterAPI.IsDriverServiceRunning())
+                {
                     ret = FilterAPI.InstallDriver();
                     if (!ret)
                     {
                         lastError = "Installed driver failed with error:" + FilterAPI.GetLastErrorMessage();
                         return false;
                     }
-                    else
-                    {
-                        isFilterStarted = false;
-                        EventManager.WriteMessage(59, "InstallDriver", EventLevel.Information, "Install filter driver succeeded.");
-                    }
                 }
-
 
                 if (!isFilterStarted)
                 {

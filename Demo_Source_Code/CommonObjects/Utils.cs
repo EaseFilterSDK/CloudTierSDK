@@ -34,6 +34,43 @@ namespace EaseFilter.CommonObjects
 
     public class Utils
     {
+        public static bool IsDriverChanged()
+        {
+            bool ret = false;
+
+            try
+            {
+                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
+                string localPath = Path.GetDirectoryName(assembly.Location);
+                string driverName = Path.Combine(localPath, "CloudTier.sys");
+
+                if (File.Exists(driverName))
+                {
+                    string driverInstalledPath = Path.Combine(Environment.SystemDirectory, "drivers\\CloudTier.sys");
+
+                    if (File.Exists(driverInstalledPath))
+                    {
+                        FileInfo fsInstalled = new FileInfo(driverInstalledPath);
+                        FileInfo fsToInstall = new FileInfo(driverName);
+
+                        if (fsInstalled.LastWriteTime != fsToInstall.LastWriteTime)
+                        {
+                            return true;
+                        }
+                    }
+
+                }
+
+            }
+            catch
+            {
+                ret = false;
+            }
+
+            return ret;
+        }
+
+
         public static uint WinMajorVersion()
         {
             dynamic major;

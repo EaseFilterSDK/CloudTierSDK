@@ -209,6 +209,20 @@ CreateStubFile(
 
 extern "C" __declspec(dllexport) 
 BOOL
+CreateStubFileEx(
+	LPCTSTR		fileName,
+	LONGLONG	fileSize,
+	ULONG		fileAttributes,
+	ULONG		tagDataLength,
+	BYTE*		tagData,
+	ULONGLONG   newCreationTime,    
+    ULONGLONG   newLastWriteTime,
+	ULONGLONG   newLastAccessTime,
+	BOOL		overwriteIfExist,
+	PHANDLE		pHandle );
+
+extern "C" __declspec(dllexport) 
+BOOL
 GetTagData(
 	HANDLE hFile,
 	PULONG tagDataLength,

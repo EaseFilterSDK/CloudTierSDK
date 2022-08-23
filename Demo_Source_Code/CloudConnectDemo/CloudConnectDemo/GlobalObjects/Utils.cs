@@ -150,8 +150,8 @@ namespace EaseFilter.GlobalObjects
                 }
 
 
-                sourceFile = Path.Combine(sourceFolder, "FilterAPI.sys");
-                targetName = Path.Combine(localPath, "FilterAPI.sys");
+                sourceFile = Path.Combine(sourceFolder, "CloudTier.sys");
+                targetName = Path.Combine(localPath, "CloudTier.sys");
 
 
                 skipCopy = false;
@@ -174,7 +174,7 @@ namespace EaseFilter.GlobalObjects
             }
             catch (Exception ex)
             {
-                string lastError = "Copy platform dependent files 'FilterAPI.DLL' and 'FilterAPI.sys' to folder " + localPath + " got exception:" + ex.Message;
+                string lastError = "Copy platform dependent files 'FilterAPI.DLL' and 'CloudTier.sys' to folder " + localPath + " got exception:" + ex.Message;
                 EventManager.WriteMessage(80, "CopyOSPlatformDependentFiles", EventLevel.Error, lastError);
             }
         }

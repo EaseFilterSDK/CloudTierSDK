@@ -104,8 +104,6 @@ namespace EaseFilter.CommonObjects
             isRunning = false;
             stopEvent.Set();
 
-            //for testing purpose to check the lastest version.
-            WebFormServices.GetUpdatedInfo();
         }     
      
         public static bool SaveConfigSetting()

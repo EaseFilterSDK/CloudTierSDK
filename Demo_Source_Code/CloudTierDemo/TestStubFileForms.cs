@@ -22,6 +22,8 @@ namespace CloudTierDemo
         public static string stubFilesFolder = AssemblyPath + "\\TestStubFolder";
         static int totalStubFile = 0;
 
+        const uint FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000; 
+
         public TestStubFileForms()
         {
             InitializeComponent();
@@ -59,8 +61,7 @@ namespace CloudTierDemo
             for (int i = 1; i < 6; i++)
             {
                 string testStr = string.Empty;
-                byte[] buffer = new byte[i * 10240];
-                for (int j = 0; j < buffer.Length; j++)
+                for (int j = 0; j < i*10240; j++)
                 {
                     int rem = 0;
                     Math.DivRem(j, 26, out rem);
@@ -127,12 +128,19 @@ namespace CloudTierDemo
 
                     try
                     {
-                        ret = FilterAPI.CreateStubFile(stubFileName, fileInfo.Length, (uint)FileAttributes.Normal, (uint)tagData.Length, Marshal.UnsafeAddrOfPinnedArrayElement(tagData, 0), true, ref fileHandle);
+                        //FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS is the attribute to tell the antivirus software to skip the scanning.
+                        //it requires the driver was loaded.
+                        ret = FilterAPI.CreateStubFileEx(stubFileName, fileInfo.Length, (uint)FileAttributes.Offline | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS,
+                            (uint)tagData.Length, Marshal.UnsafeAddrOfPinnedArrayElement(tagData, 0), 0, 0, 0, true, ref fileHandle);
                         if (!ret)
                         {
-                            Console.WriteLine("Create stub file:" + stubFileName + " failed.\n" + FilterAPI.GetLastErrorMessage());
-                            return ret;
+                           EventManager.WriteMessage(100, "createTestStubFile", EventLevel.Error, "Create stub file:" + stubFileName + " failed.\n" + FilterAPI.GetLastErrorMessage());
+                           continue;
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        EventManager.WriteMessage(150, "createTestStubFile", EventLevel.Error, "Create stub file:" + stubFileName + " failed.\n" + ex.Message);
                     }
                     finally
                     {

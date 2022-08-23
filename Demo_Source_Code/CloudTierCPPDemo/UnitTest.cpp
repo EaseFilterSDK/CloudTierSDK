@@ -16,26 +16,35 @@ using namespace std;
 
 #define	MAX_ERROR_MESSAGE_SIZE	1024
 
-static CHAR* testEventFile = "c:\\filterTest\\eventTest\\test.txt";
-static CHAR* testEventRenameFile = "c:\\filterTest\\eventTest\\rename.txt";
-static WCHAR* testEventFolder = L"c:\\filterTest\\eventTest";
-static WCHAR* testFolder = L"c:\\filterTest";
-static WCHAR* fileReparseTestFolder = L"c:\\filterTest\\fileReparseTestFolder";
-static WCHAR* fileRestoreTestFolder = L"c:\\filterTest\\fileRestoreTestFolder";
-static WCHAR* blockTestFolder = L"c:\\filterTest\\blockTestFolder";
-static WCHAR* cacheFolder = L"c:\\filterTest\\cacheFolder";
-static WCHAR* cacheFolderFilterMask = L"c:\\filterTest\\cacheFolder\\*";
-static WCHAR* testStubFileFolder = L"c:\\filterTest\\testStubFileFolder";
-static WCHAR* reparseLocalTestFile = L"c:\\filterTest\\fileReparseTestFolder\\LocalStubFileTest.txt";
-static WCHAR* reparseUNCTestFile = L"c:\\filterTest\\fileReparseTestFolder\\UNCStubFileTest.txt"; //the reparse tag data point to UNC path
-static WCHAR* targetTestFile = L"c:\\filterTest\\targetTest.txt";
-static WCHAR* targetUNCTestFile = L"\\\\localhost\\c$\\filterTest\\targetTest.txt";
-static WCHAR* blockTestFile = L"c:\\filterTest\\blockTestFolder\\StubFileTest.txt";
-static WCHAR* testFile = L"c:\\filterTest\\fileRestoreTestFolder\\StubFileTest.txt";
-static WCHAR* cacheFile = L"c:\\filterTest\\cacheFolder\\StubFileTest.txt";
-static WCHAR* fileRestoreTestFile = L"c:\\filterTest\\fileRestoreTestFolder\\StubFileTest.txt";
+static WCHAR* testFolder = L"c:\\CloudTierUnitTest";
+static CHAR* testEventFile = "c:\\CloudTierUnitTest\\eventTest\\test.txt";
+static CHAR* testEventRenameFile = "c:\\CloudTierUnitTest\\eventTest\\rename.txt";
+static WCHAR* testEventFolder = L"c:\\CloudTierUnitTest\\eventTest";
+
+//the folder to store the test source file in local.
+static WCHAR* sourceFileFolder = L"c:\\CloudTierUnitTest\\sourceFileFolder";
+//the test soure file 
+static WCHAR* unitTestSourceFile = L"c:\\CloudTierUnitTest\\sourceFileFolder\\unitTestSourceFile.txt";
+static WCHAR* sourceFileFolderFilterMask = L"c:\\CloudTierUnitTest\\sourceFileFolder\\*";
+//the folder to store the test stub file
+static WCHAR* stubFileFolder = L"c:\\CloudTierUnitTest\\stubFileFolder";
+//the stub file for the unit test
+static WCHAR* unitTestStubFile = L"c:\\CloudTierUnitTest\\stubFileFolder\\unitTestStubFile.txt";
+//test the stub file read return with block data 
+static WCHAR* blockTestStubFile = L"c:\\CloudTierUnitTest\\stubFileFolder\\blockTestStubFile.txt";
+//test the stub file read return with whole cache file
+static WCHAR* wholeFileTestStubFile = L"c:\\CloudTierUnitTest\\stubFileFolder\\wholeFileTestStubFile.txt";
+//test the stub file read with rehydration
+static WCHAR* rehydrateStubFile = L"c:\\CloudTierUnitTest\\stubFileFolder\\rehydrateStubFile.txt";
+//test the stub file open and reparse the file open to the new target file.
+static WCHAR* reparseStubFile = L"c:\\CloudTierUnitTest\\stubFileFolder\\reparseStubFile.txt";
+static WCHAR* reparseTargetTestFile = L"c:\\CloudTierUnitTest\\sourceFileFolder\\reparseTargetTestFile.txt"; 
+//if you want to reparse to UNC file path, you can use this format: L"\\\\localhost\\c$\\CloudTierUnitTest\\targetTest.txt"
+
+//the test file data
 static CHAR* testData = "CloudTier test data which when you read the emty stub file, this data will be restored to the file as the file actual content,and the file system will read this data and return it to the user application";
-static CHAR* reparseData = "This is reparse point tag data for test in the stub file. The maximum length is 16*1024 bytes.";
+static CHAR* testTagData = "This is reparse point tag data for test in the stub file. The maximum length is 16*1024 bytes.";
+static ULONG testTagDataLength =  (ULONG)strlen(testTagData);
 
 BOOL
 RegisterEvent(ULONG EventType,WCHAR* FilterMask)
@@ -52,19 +61,19 @@ GetTestData()
 WCHAR*
 GetCacheFile()
 {
-	return cacheFile;
+	return unitTestSourceFile;
 }
 
 WCHAR*
 GetCacheFolder()
 {
-	return cacheFolder;
+	return sourceFileFolder;
 }
 
 BOOL
-IsRestoreFileTestFolder(WCHAR* fileName )
+IsRehydrateTestFile(WCHAR* fileName )
 {
-	if( _wcsnicmp(fileRestoreTestFolder,fileName,wcslen(fileRestoreTestFolder)) == 0)
+	if( _wcsnicmp(rehydrateStubFile,fileName,wcslen(rehydrateStubFile)) == 0)
 	{
 		return TRUE;
 	}
@@ -75,9 +84,9 @@ IsRestoreFileTestFolder(WCHAR* fileName )
 }
 
 BOOL
-IsBlockTestFolder(WCHAR* fileName )
+IsRestoreCacheTestFile(WCHAR* fileName )
 {
-	if( _wcsnicmp(blockTestFolder,fileName,wcslen(blockTestFolder)) == 0)
+	if( _wcsnicmp(wholeFileTestStubFile,fileName,wcslen(wholeFileTestStubFile)) == 0)
 	{
 		return TRUE;
 	}
@@ -87,16 +96,110 @@ IsBlockTestFolder(WCHAR* fileName )
 	}
 }
 
+BOOL
+IsBlockTestFile(WCHAR* fileName )
+{
+	if( _wcsnicmp(blockTestStubFile,fileName,wcslen(blockTestStubFile)) == 0)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+//
+//Create the test source file in local, when you read the stub file, we will get the data
+//from the test source file and return back to the stub file.
+//
 VOID
-CreateTestFile()
+CreateTestSourceFile()
 {
 	char* testFileContent = "This is test content for stub file.\r\n";
 	WCHAR testFileName[260];
 
+	if(!CreateDirectory(testFolder,NULL))
+	{
+		DWORD lastError = GetLastError();
+		if( lastError != ERROR_ALREADY_EXISTS )
+		{
+			PrintErrorMessage(L"Create testFolder failed.", lastError);
+			return;
+		}
+	}	
+
+	if(!CreateDirectory(sourceFileFolder,NULL))
+	{
+		DWORD lastError = GetLastError();
+		if( lastError != ERROR_ALREADY_EXISTS )
+		{
+			PrintErrorMessage(L"Create sourceFileFolder failed.", lastError);
+			return;
+		}
+	}
+	
+	HANDLE hFile = CreateFile(
+						unitTestSourceFile, 
+						GENERIC_READ | GENERIC_WRITE,
+						FILE_SHARE_READ|FILE_SHARE_WRITE,
+						NULL,
+						OPEN_ALWAYS,
+						FILE_FLAG_OPEN_REPARSE_POINT,
+						NULL);
+
+	if( hFile == INVALID_HANDLE_VALUE )
+	{
+		DWORD lastError = GetLastError();
+		if( lastError != ERROR_ALREADY_EXISTS )
+		{
+			PrintErrorMessage(L"Create unitTestSourceFile failed.", lastError);
+			return;
+		}		
+	}
+
+
+	ULONG bytesWritten = 0;
+	WriteFile(hFile,testData,(DWORD)strlen(testData),&bytesWritten,NULL);
+
+	if( INVALID_HANDLE_VALUE != hFile )
+	{
+	   CloseHandle(hFile);
+	}
+	
+	hFile = CreateFile(
+						reparseTargetTestFile, 
+						GENERIC_READ | GENERIC_WRITE,
+						FILE_SHARE_READ|FILE_SHARE_WRITE,
+						NULL,
+						OPEN_ALWAYS,
+						FILE_FLAG_OPEN_REPARSE_POINT,
+						NULL);
+
+	if( hFile == INVALID_HANDLE_VALUE )
+	{
+		DWORD lastError = GetLastError();
+		if( lastError != ERROR_ALREADY_EXISTS )
+		{
+			PrintErrorMessage(L"Create unitTestSourceFile failed.", lastError);
+			return;
+		}		
+	}
+
+
+	bytesWritten = 0;
+	WriteFile(hFile,testData,(DWORD)strlen(testData),&bytesWritten,NULL);
+
+	if( INVALID_HANDLE_VALUE != hFile )
+	{
+	   CloseHandle(hFile);
+	}
+
+	//create 10 test source file here.
 	ZeroMemory(testFileName, sizeof(testFileName));
 	for ( ULONG i = 0; i < 10; i++)
 	{
-		swprintf_s(testFileName,L"%s\\test.%d.txt",cacheFolder,i);
+		swprintf_s(testFileName,L"%s\\test.%d.txt",sourceFileFolder,i);
 
 		HANDLE handle = CreateFile(testFileName, GENERIC_WRITE,NULL,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL );
 
@@ -121,21 +224,120 @@ CreateTestFile()
 
 		CloseHandle(handle);
 
-		wprintf(L"Created test file %s\r\n",testFileName);
+		wprintf(L"Created test source file %s\r\n",testFileName);
 
 	}
 
 }
 
+BOOL
+CreateReparseStubFile(WCHAR* StubFileName,WCHAR* ReparseFileName)
+{
+	BOOL ret = FALSE;	
+	ULONG	reparseTagDataLength = 0;
+	PREPARSETAG_DATA reparseTagData = NULL;
+	HANDLE pFile = INVALID_HANDLE_VALUE;
+
+	reparseTagDataLength =(ULONG)(sizeof(REPARSETAG_DATA) + wcslen(ReparseFileName)*sizeof(WCHAR));
+	reparseTagData =(PREPARSETAG_DATA)malloc(reparseTagDataLength);
+
+	if( NULL == reparseTagData)
+	{
+		PrintErrorMessage(L"No enough memory.", 0);
+		ret = FALSE;
+		goto EXIT;
+	}
+
+	ZeroMemory(reparseTagData,reparseTagDataLength);
+	reparseTagData->ReparseTagKey = REPARSETAG_KEY;
+	reparseTagData->FileNameLength = (ULONG)wcslen(ReparseFileName)*sizeof(WCHAR);
+	memcpy(reparseTagData->FileName,ReparseFileName,wcslen(ReparseFileName)*sizeof(WCHAR));
+
+	ret = CreateStubFileEx(StubFileName,strlen(testData),FILE_ATTRIBUTE_NORMAL|FILE_ATTRIBUTE_OFFLINE,reparseTagDataLength,(BYTE*)reparseTagData,0,0,0,TRUE,&pFile);
+	if( !ret )
+	{
+		PrintLastErrorMessage( L"CreateStubFile failed.",__LINE__);
+	}
+EXIT:
+	
+	CloseHandle(pFile);
+
+	return ret;
+}
+
+//
+//To test the stub file in local, we created some source files in a local test folder, you can put your source files to 
+//your own remote server or the public cloud. We will create a test stub file for every test source file, we will add the
+//link to the source file as the tag data of the stub file.
+//
 VOID
 CreateTestStubFiles()
 {
-	//we will create the stub files based on the cache folder's files.
-	//when the user open the stub file in test stub file folder,all data will read from cache folder's file.
+	HANDLE hFile = INVALID_HANDLE_VALUE;
+	LONGLONG fileSize = strlen(testData);
+	ULONG fileAttribute = FILE_ATTRIBUTE_OFFLINE;
+	ULONG tagDataLength = (ULONG)wcslen(unitTestSourceFile)*2;
+	BYTE* tagData = (BYTE*)unitTestSourceFile;
 
 	WIN32_FIND_DATA ffd;
-	HANDLE pFile = FindFirstFile(cacheFolderFilterMask, &ffd);
-	ULONG testStubFileFolderLength = (int)wcslen(testStubFileFolder)*2;
+	HANDLE pFile = FindFirstFile(sourceFileFolderFilterMask, &ffd);
+	ULONG stubFileFolderLength = (int)wcslen(stubFileFolder)*2;
+
+	if(!CreateDirectory(stubFileFolder,NULL))
+	{
+		DWORD lastError = GetLastError();
+		if( lastError != ERROR_ALREADY_EXISTS )
+		{
+			PrintErrorMessage(L"Create stubFileFolder failed.", lastError);
+			return;
+		}
+	}
+
+	if(!CreateStubFileEx(unitTestStubFile,fileSize,fileAttribute|FILE_ATTRIBUTE_OFFLINE,testTagDataLength,(BYTE*)testTagData,0,0,0,TRUE,&hFile))
+	{
+		PrintLastErrorMessage( L"CreateStubFile failed.",__LINE__);
+	}
+
+	if( INVALID_HANDLE_VALUE != hFile )
+	{
+	   CloseHandle(hFile);
+	}
+
+	if(!CreateStubFileEx(blockTestStubFile,fileSize,fileAttribute|FILE_ATTRIBUTE_OFFLINE,tagDataLength,(BYTE*)tagData,0,0,0,TRUE,&hFile))
+	{
+		PrintLastErrorMessage( L"CreateStubFile failed.",__LINE__);
+	}
+
+	if( INVALID_HANDLE_VALUE != hFile )
+	{
+	   CloseHandle(hFile);
+	}
+
+	if(!CreateStubFileEx(wholeFileTestStubFile,fileSize,fileAttribute|FILE_ATTRIBUTE_OFFLINE,tagDataLength,(BYTE*)tagData,0,0,0,TRUE,&hFile))
+	{
+		PrintLastErrorMessage( L"CreateStubFile wholeFileTestStubFile failed.",__LINE__);
+	}
+
+	if( INVALID_HANDLE_VALUE != hFile )
+	{
+	   CloseHandle(hFile);
+	}
+
+	if(!CreateStubFileEx(rehydrateStubFile,fileSize,fileAttribute|FILE_ATTRIBUTE_OFFLINE,tagDataLength,(BYTE*)tagData,0,0,0,TRUE,&hFile))
+	{
+		PrintLastErrorMessage( L"CreateStubFile rehydrateStubFile failed.",__LINE__);
+	}
+
+	if( INVALID_HANDLE_VALUE != hFile )
+	{
+	   CloseHandle(hFile);
+	}
+
+	if(!CreateReparseStubFile(reparseStubFile,reparseTargetTestFile))
+	{
+		PrintLastErrorMessage( L"CreateReparseStubFile failed.",__LINE__);
+	}
+
 
 	do
     {
@@ -153,31 +355,36 @@ CreateTestStubFiles()
          fileSize.HighPart = ffd.nFileSizeHigh;
 
 		 //the new test stub file name should be with this format:
-		 // L"c:\\filterTest\\testStubFileFolder"  + "\\" + fileName + "\0"
+		 // L"c:\\CloudTierUnitTest\\stubFileFolder"  + "\\" + fileName + "\0"
 
-		 ULONG fileNameLength = (ULONG)(testStubFileFolderLength + 2*sizeof(WCHAR) + 2*wcslen(ffd.cFileName));
-		 WCHAR* fileName =  (PWCHAR)LocalAlloc(LPTR, fileNameLength);
-        if (!fileName)
+		 ULONG fileNameLength = (ULONG)(stubFileFolderLength + 2*sizeof(WCHAR) + 2*wcslen(ffd.cFileName));
+		 WCHAR* testStubFile =  (PWCHAR)LocalAlloc(LPTR, fileNameLength);
+        if (!testStubFile)
         {
 			PrintLastErrorMessage( L"Allocate memory failed.",__LINE__);
 			goto EXIT;
         }
 
-		memset(fileName,0,fileNameLength);
+		memset(testStubFile,0,fileNameLength);
+		memcpy(testStubFile,stubFileFolder,stubFileFolderLength);
+		testStubFile[stubFileFolderLength/2] = (WCHAR)'\\';
+		memcpy((PUCHAR)testStubFile + stubFileFolderLength + 2,ffd.cFileName,(int)2*wcslen(ffd.cFileName));
 
-		memcpy(fileName,testStubFileFolder,testStubFileFolderLength);
+		//here we set tag data with the associcated source file,in the filter callback function, you can read the data from the source file name for this stub file.
+		//you can set your own tag data.
+		ULONG sourceFileNameLength = (ULONG)(wcslen(sourceFileFolder)*2 + 2*sizeof(WCHAR) + 2*wcslen(ffd.cFileName));
+		WCHAR* sourceFileName =  (PWCHAR)LocalAlloc(LPTR, sourceFileNameLength);
+		memset(sourceFileName,0,sourceFileNameLength);
+		memcpy(sourceFileName,sourceFileFolder,2*wcslen(sourceFileFolder));
+		sourceFileName[wcslen(sourceFileFolder)] = (WCHAR)'\\';
+		memcpy((PUCHAR)sourceFileName + 2*wcslen(sourceFileFolder) + 2,ffd.cFileName,(int)2*wcslen(ffd.cFileName));
 
-		fileName[testStubFileFolderLength/2] = (WCHAR)'\\';
-		memcpy((PUCHAR)fileName + testStubFileFolderLength + 2,ffd.cFileName,(int)2*wcslen(ffd.cFileName));
+		ret = CreateStubFileEx(testStubFile,fileSize.QuadPart,ffd.dwFileAttributes|FILE_ATTRIBUTE_OFFLINE,sourceFileNameLength,(BYTE*)sourceFileName,0,0,0,TRUE,&hFile);
 
-		//here we set tag data with the file name in cache folder,in the filter callback function, it then can get back the cache file name for this stub file.
-		//in your case, you can set it as the data you need.
-		ULONG tagDataLength = (ULONG)2*wcslen(ffd.cFileName);
-		ret = CreateStubFile(fileName,fileSize.QuadPart,ffd.dwFileAttributes,tagDataLength,(BYTE*)ffd.cFileName,TRUE,&hFile);
+		wprintf(L"Create test stub file %ws return %d.\n",testStubFile,ret);
 
-		wprintf(L"Create test stub file %ws return %d.\n",fileName,ret);
-
-		LocalFree(fileName);
+		LocalFree(sourceFileName);
+		LocalFree(testStubFile);
 
 		if( !ret )
 		{
@@ -203,168 +410,6 @@ EXIT:
 
 }
 
-BOOL
-CreateUnitTestStubFile()
-{
-	BOOL ret = FALSE;
-	HANDLE hFile = INVALID_HANDLE_VALUE;
-	LONGLONG fileSize = strlen(testData);
-	ULONG fileAttribute = FILE_ATTRIBUTE_NORMAL;
-	ULONG tagDataLength = (ULONG)strlen(reparseData);
-	
-	ret = CreateDirectory(testFolder,NULL);
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create testFolder failed.", lastError);
-			goto EXIT;
-		}
-	}	
-
-	ret = CreateDirectory(fileReparseTestFolder,NULL);
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create fileReparseTestFolder failed.", lastError);
-			goto EXIT;
-		}
-	}	
-
-	//Create the fileRestoreTestFolder.
- 	ret = CreateDirectory(fileRestoreTestFolder,NULL);
-
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create fileRestoreTestFolder failed.", lastError);
-			goto EXIT;
-		}
-	}	
-
-	ret = CreateDirectory(testEventFolder,NULL);
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create testEventFolder failed.", lastError);
-			goto EXIT;
-		}
-	}	
-
-	ret = CreateDirectory(cacheFolder,NULL);
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create cacheFolder failed.", lastError);
-			goto EXIT;
-		}
-	}
-
-	ret = CreateDirectory(testStubFileFolder,NULL);
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create test stub file folder failed.", lastError);
-			goto EXIT;
-		}
-	}
-
-
-	hFile = CreateFile(
-						cacheFile, 
-						GENERIC_READ | GENERIC_WRITE,
-						FILE_SHARE_READ|FILE_SHARE_WRITE,
-						NULL,
-						OPEN_ALWAYS,
-						FILE_FLAG_OPEN_REPARSE_POINT,
-						NULL);
-
-	if( hFile == INVALID_HANDLE_VALUE )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create cacheFile failed.", lastError);
-			goto EXIT;
-		}		
-	}
-
-
-	ULONG bytesWritten = 0;
-	ret = WriteFile(hFile,GetTestData(),(DWORD)strlen(GetTestData()),&bytesWritten,NULL);
-	if(!ret)
-	{
-		PrintErrorMessage(L"WriteFile failed.",GetLastError());
-		goto EXIT;
-	}
-
-	if( INVALID_HANDLE_VALUE != hFile )
-	{
-	   CloseHandle(hFile);
-	}
-
-	ret = CreateStubFile(fileRestoreTestFile,fileSize,fileAttribute,tagDataLength,(BYTE*)reparseData,TRUE,&hFile);
-	if( !ret )
-	{
-		PrintLastErrorMessage( L"CreateStubFile failed.",__LINE__);
-		goto EXIT;
-	}
-
-	if( INVALID_HANDLE_VALUE != hFile )
-	{
-	   CloseHandle(hFile);
-	}
-
-	//Create the blockTestFolder.
- 	ret = CreateDirectory(blockTestFolder,NULL);
-
-	if( !ret )
-	{
-		DWORD lastError = GetLastError();
-		if( lastError != ERROR_ALREADY_EXISTS )
-		{
-			PrintErrorMessage(L"Create blockTestFolder failed.", lastError);
-			goto EXIT;
-		}
-	}	
-
-	ret = CreateStubFile(blockTestFile,fileSize,fileAttribute,tagDataLength,(BYTE*)reparseData,TRUE,&hFile);
-	if( !ret )
-	{
-		PrintLastErrorMessage( L"CreateStubFile failed.",__LINE__);
-	}
-
-
-EXIT:
-
-	if(!ret )
-	{
-	   PrintFailedMessage(L"\nCreateStubFileTest failed.\n\n");	   
-	}
-	else
-	{
-	   PrintPassedMessage(L"\nCreateStubFileTest Passed.\n\n");
-	}
-
-	if( INVALID_HANDLE_VALUE != hFile )
-	{
-	   CloseHandle(hFile);
-	}
-
-	return ret;
-
-}
 
 BOOL
 OpenStubFileTest()
@@ -372,7 +417,7 @@ OpenStubFileTest()
     BOOL ret = FALSE;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 
-	ret = OpenStubFile(testFile,GENERIC_READ,SHARE_READ,&hFile);
+	ret = OpenStubFile(unitTestStubFile,GENERIC_READ,SHARE_READ,&hFile);
 	if( !ret )
 	{
 		PrintLastErrorMessage( L"OpenStubFile failed.",__LINE__);
@@ -397,10 +442,10 @@ GetTagDataTest()
 {
     BOOL ret = FALSE;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
-	ULONG tagDataLength = (ULONG)strlen(reparseData);
+	ULONG tagDataLength = (ULONG)strlen(testTagData);
 	CHAR* tagData = (CHAR*)malloc(tagDataLength);
 
-	ret = OpenStubFile(testFile,GENERIC_READ,SHARE_READ,&hFile);
+	ret = OpenStubFile(unitTestStubFile,GENERIC_READ,SHARE_READ,&hFile);
 	if( !ret )
 	{
 		PrintLastErrorMessage( L"OpenStubFile failed.",__LINE__);
@@ -414,7 +459,7 @@ GetTagDataTest()
 		goto EXIT;
 	}
 
-	if( memcmp(tagData,reparseData,tagDataLength)!= 0)
+	if( memcmp(tagData,testTagData,tagDataLength)!= 0)
 	{
 		PrintFailedMessage(L"Return tag data is not valid.\n");
 		ret = FALSE;
@@ -452,9 +497,9 @@ RemoveTagDataTest()
 
 	//remove readonly if it exists there, please note that the reparse point 
 	//attribute can't be removed by this API.
-	SetFileAttributes(testFile,fileAttribute);
+	SetFileAttributes(unitTestStubFile,fileAttribute);
 
-	fileAttribute = GetFileAttributes(testFile);
+	fileAttribute = GetFileAttributes(unitTestStubFile);
 	if(( fileAttribute & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
 	{
 		ret = FALSE;
@@ -462,7 +507,7 @@ RemoveTagDataTest()
 		goto EXIT;
 	}
 
-	ret = OpenStubFile(testFile,GENERIC_WRITE,SHARE_READ,&hFile);
+	ret = OpenStubFile(unitTestStubFile,GENERIC_WRITE,SHARE_READ,&hFile);
 	if( !ret )
 	{
 		PrintLastErrorMessage( L"OpenStubFile failed.",__LINE__);
@@ -476,7 +521,7 @@ RemoveTagDataTest()
 		goto EXIT;
 	}
 
-	fileAttribute = GetFileAttributes(testFile);
+	fileAttribute = GetFileAttributes(unitTestStubFile);
 
 	if( (fileAttribute & FILE_ATTRIBUTE_REPARSE_POINT) > 0)
 	{
@@ -510,14 +555,14 @@ AddTagDataTest()
 {
     BOOL ret = FALSE;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
-	ret = OpenStubFile(testFile,GENERIC_WRITE,SHARE_READ,&hFile);
+	ret = OpenStubFile(unitTestStubFile,GENERIC_WRITE,SHARE_READ,&hFile);
 	if( !ret )
 	{
 		PrintLastErrorMessage( L"OpenStubFile failed.",__LINE__);
 		goto EXIT;
 	}
 
-	ret = AddTagData(hFile,(ULONG)strlen(reparseData),(BYTE*)reparseData);
+	ret = AddTagData(hFile,(ULONG)strlen(testTagData),(BYTE*)testTagData);
 	if( !ret )
 	{
 		PrintLastErrorMessage( L"AddTagData failed.",__LINE__);
@@ -544,7 +589,7 @@ EXIT:
 }
 
 BOOL
-ReadTest(WCHAR* fileName)
+ReadStubFile(WCHAR* fileName)
 {
 	BOOL ret = FALSE;	
 
@@ -591,16 +636,7 @@ ReadTest(WCHAR* fileName)
 	  
 	}
 
-EXIT:
-
-	if( ret )
-	{
-		PrintPassedMessage(L"\nReadStubTest Passed.\n\n");
-	}
-	else
-	{
-		PrintFailedMessage(L"\nReadStubTest Failed.\n\n");
-	}
+EXIT:	
 
 	if(pFile)
 	{
@@ -611,136 +647,90 @@ EXIT:
 
 }
 
+
+//
+//There are two types of stub file read from the filter driver:
+//1. MESSAGE_TYPE_RESTORE_FILE_TO_CACHE:
+//When the stub file was written in first time, the filter driver needs to restore the whole file first,you need to create 
+//a cache file and return to the filter driver,the filter driver will rehydrate the stub file with the cache file data.
+
+//For the memory mapped file open( for example open file with notepad in local computer),it requires to download the whole 
+//cache file and return it to filter driver, the filter driver will read the cache file data.
+
+//2. MESSAGE_TYPE_RESTORE_BLOCK_OR_FILE: 
+//For this stub file read request type, you can return the requested block data to filter driver, or you can return
+//the whole cache file to filter driver, if you return whole cache file, the filter driver will read data from the 
+//cache file, if you return the whole cache. 
+//
+//Return filter status, there are three return status you can return:
+//1. BLOCK_DATA_WAS_RETURNED: return the rquested block data to the filter driver, if you want to read the sepecific blocks of the data.
+//2. CACHE_FILE_WAS_RETURNED: return the cache file to the filter driver if the soure data was downloaded completely to a cache file.
+//3. REHYDRATE_FILE_VIA_CACHE_FILE: the stub file will be rehydrated if the soure data was downloaded completely to a cache file.
+//
 BOOL
 ReadStubFileTest()
-{
-	//for restore file test, in callback function, we will restore all the data to the stub file,
-	//the stub file will turn into normal file, so this is the file level read
-	if( !ReadTest(fileRestoreTestFile))
+{	
+	//for block read file test, in callback function, we only return the block data to user,
+	//the stub file won't change, it is especially good for large file and only need blocks of data.
+	if( !ReadStubFile(blockTestStubFile))
 	{
+		PrintFailedMessage(L"\nRead blockTestStubFile Failed.\n\n");
 		return FALSE;
 	}
-
-	//for block file test, in callback function, we only return the block data to user,
-	//the stub file won't change, it is especially good for large file and only need blocks of data.
-	if( !ReadTest(blockTestFile))
+	else
 	{
+		PrintPassedMessage(L"\nRead blockTestStubFile Passed.\n\n");
+	}
+
+	//for cache file file test, in callback function, we will download the whole file to a cache file and return.
+	if( !ReadStubFile(wholeFileTestStubFile))
+	{
+		PrintFailedMessage(L"\nRead wholeFileTestStubFile Failed.\n\n");
 		return FALSE;
+	}
+	else
+	{
+		PrintPassedMessage(L"\nRead wholeFileTestStubFile Passed.\n\n");
+	}
+
+	//for stub file rehydration test, in callback function, we will restore all the data to the stub file,
+	//the stub file will turn into normal file, so this is the file level read
+	if( !ReadStubFile(rehydrateStubFile))
+	{
+		PrintFailedMessage(L"\nRead rehydrateStubFile Failed.\n\n");
+		return FALSE;
+	}
+	else
+	{
+		ULONG fileAttribute = GetFileAttributes(rehydrateStubFile);
+		if(( fileAttribute & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
+		{
+			//the reparsepoint attribute should be removed.
+			PrintFailedMessage(L"\nRead rehydrateStubFile Failed, the stub file is not rehydrated.\n\n");
+		}
+		else
+		{
+			PrintPassedMessage(L"\nRead rehydrateStubFile Passed.\n\n");
+		}
+	}
+
+
+	//for the reparse stub file test, the stub file open will be reparsed to the new target file open.
+	if( !ReadStubFile(reparseStubFile))
+	{
+		PrintFailedMessage(L"\nRead reparseStubFile Failed.\n\n");
+		return FALSE;
+	}
+	else
+	{
+		PrintPassedMessage(L"\nRead reparseStubFile Passed.\n\n");
 	}
 
 	return TRUE;
 
 }
 
-BOOL
-CreateReparseStubFile(WCHAR* StubFileName,WCHAR* ReparseFileName)
-{
-	BOOL ret = FALSE;	
-	ULONG	reparseTagDataLength = 0;
-	PREPARSETAG_DATA reparseTagData = NULL;
-	HANDLE pFile = INVALID_HANDLE_VALUE;
 
-	reparseTagDataLength =(ULONG)(sizeof(REPARSETAG_DATA) + wcslen(ReparseFileName)*sizeof(WCHAR));
-	reparseTagData =(PREPARSETAG_DATA)malloc(reparseTagDataLength);
-
-	if( NULL == reparseTagData)
-	{
-		PrintErrorMessage(L"No enough memory.", 0);
-		ret = FALSE;
-		goto EXIT;
-	}
-
-	ZeroMemory(reparseTagData,reparseTagDataLength);
-	reparseTagData->ReparseTagKey = REPARSETAG_KEY;
-	reparseTagData->FileNameLength = (ULONG)wcslen(ReparseFileName)*sizeof(WCHAR);
-	memcpy(reparseTagData->FileName,ReparseFileName,wcslen(ReparseFileName)*sizeof(WCHAR));
-
-	ret = CreateStubFile(StubFileName,strlen(testData),FILE_ATTRIBUTE_NORMAL,reparseTagDataLength,(BYTE*)reparseTagData,TRUE,&pFile);
-	if( !ret )
-	{
-		PrintLastErrorMessage( L"CreateStubFile failed.",__LINE__);
-	}
-EXIT:
-	
-	CloseHandle(pFile);
-
-	return ret;
-}
-
-//
-//Set the repare tag data as your reparse file name
-//when the user open the stub file, the filter driver will get the reparse file name from the tag data.
-//then reparse the open to this new file name.But make sure the user has the permission to the new file name.
-//
-BOOL
-RepareFileTest()
-{
-	BOOL ret = FALSE;	
-	DWORD dwTransferred = 0;
-	
-	DWORD nError = 0;
-
-	//create target file
-	HANDLE pFile = CreateFile(targetTestFile,GENERIC_ALL,NULL,NULL,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
-	
-	if( INVALID_HANDLE_VALUE == pFile )
-	{
-		PrintErrorMessage(L"Open file for targetTestFile failed.",GetLastError());
-		goto EXIT;
-	}
-
-	if(!WriteFile(pFile, testData,(DWORD)strlen(testData), (LPDWORD)&dwTransferred, NULL))
-	{
-		nError = GetLastError();
-		PrintErrorMessage(L"WriteFile failed.", nError);
-		ret = FALSE;
-		goto EXIT;
-	}
-
-	CloseHandle(pFile);
-
-	ret = CreateReparseStubFile(reparseLocalTestFile,targetTestFile);
-	if(!ret)
-	{
-		goto EXIT;
-	}
-
-	ret = ReadTest(reparseLocalTestFile);
-	if(!ret)
-	{
-		goto EXIT;
-	}
-
-	ret = CreateReparseStubFile(reparseUNCTestFile,targetUNCTestFile);
-	if(!ret)
-	{
-		goto EXIT;
-	}
-
-	ret = ReadTest(reparseUNCTestFile);
-	if(!ret)
-	{
-		goto EXIT;
-	}
-
-EXIT:
-
-	if( ret )
-	{
-		PrintPassedMessage(L"\nRepareFileTest Passed.\n\n");
-	}
-	else
-	{
-		PrintFailedMessage(L"\nRepareFileTest Failed.\n\n");
-	}
-
-	if(pFile)
-	{
-		CloseHandle(pFile);
-	}
-
-	return ret;
-}
 
 BOOL
 EventTest()
@@ -749,6 +739,16 @@ EventTest()
 	DWORD dwTransferred = 0;
 	
 	DWORD nError = 0;
+
+	if(!CreateDirectory(testEventFolder,NULL))
+	{
+		DWORD lastError = GetLastError();
+		if( lastError != ERROR_ALREADY_EXISTS )
+		{
+			PrintErrorMessage(L"Create testEventFolder failed.", lastError);
+			goto EXIT;
+		}
+	}
 
 	//create test event file
 	HANDLE pFile = CreateFileA(testEventFile,GENERIC_ALL,NULL,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
@@ -818,15 +818,6 @@ FilterDriverUnitTest()
 		return;
 	}
 
-	//when ENABLE_NO_RECALL_FLAG was set, the filter driver will skip the reparse point file with 
-	//open option FILE_FLAG_OPEN_NO_RECALL
-	ret = SetBooleanConfig(ENABLE_NO_RECALL_FLAG);
-	if( !ret )
-	{
-		PrintLastErrorMessage( L"SetBooleanConfig failed.",__LINE__);
-		return ;
-	}
-
 	//Set filter maiximum wait for user mode response time out.
 	ret = SetConnectionTimeout(30); 
 	if( !ret )
@@ -839,17 +830,14 @@ FilterDriverUnitTest()
 	//If you want to monitor the file event(created,changed,renamed,deleted) of the folders,
 	//you can register the event here
 	//
-	ret = RegisterEvent(FILE_CREATEED|FILE_CHANGED|FILE_RENAMED|FILE_DELETED,L"c:\\filterTest\\eventTest\\*");
+	ret = RegisterEvent(FILE_CREATEED|FILE_CHANGED|FILE_RENAMED|FILE_DELETED,L"c:\\CloudTierUnitTest\\eventTest\\*");
 	if( !ret )
 	{
 		PrintLastErrorMessage( L"RegisterEvent failed.",__LINE__);
 		return ;
 	}
 
-
-	CreateUnitTestStubFile();
-
-	CreateTestFile();
+	CreateTestSourceFile();
 
 	CreateTestStubFiles();
 
@@ -862,8 +850,6 @@ FilterDriverUnitTest()
 	AddTagDataTest();
 
 	ReadStubFileTest();
-
-	RepareFileTest();	
 
 	EventTest();
 
