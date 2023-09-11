@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//    (C) Copyright 2011 EaseFilter Technologies Inc.
+//    (C) Copyright 2011 EaseFilter
 //    All Rights Reserved
 //
 //    This software is part of a licensed software product and may
@@ -239,5 +239,9 @@ AddTagData(
     HANDLE  hFile, 
     ULONG   tagDataLength,
 	BYTE*	tagData );
+
+extern "C" __declspec(dllexport) 
+BOOL
+SetMaxWaitingRequestCount(ULONG maxWaitingRequestCount);
 
 #endif //FILTER_API_H

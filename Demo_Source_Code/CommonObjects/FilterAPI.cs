@@ -1,6 +1,6 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
 //
-//    (C) Copyright 2011 EaseFilter Technologies Inc.
+//    (C) Copyright 2011 EaseFilter
 //    All Rights Reserved
 //
 //    This software is part of a licensed software product and may
@@ -212,6 +212,9 @@ namespace EaseFilter.CommonObjects
         public static extern bool SetConnectionTimeout(uint timeOutInSeconds);
 
         [DllImport("FilterAPI.dll", SetLastError = true)]
+        public static extern bool SetMaxWaitingRequestCount(uint maxWaitingRequestCount);
+
+        [DllImport("FilterAPI.dll", SetLastError = true)]
         public static extern bool AddIncludedProcessId(uint processId);
 
         [DllImport("FilterAPI.dll", SetLastError = true)]
@@ -327,6 +330,8 @@ namespace EaseFilter.CommonObjects
               IntPtr fileHandle,
               int tagDataLength,
               IntPtr tagData);
+
+
 
 
         public static bool AddTagData(

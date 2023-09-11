@@ -128,15 +128,19 @@ namespace CloudTierDemo
 
                     try
                     {
-                        //FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS is the attribute to tell the antivirus software to skip the scanning.
-                        //it requires the driver was loaded.
-                        ret = FilterAPI.CreateStubFileEx(stubFileName, fileInfo.Length, (uint)FileAttributes.Offline | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS,
+                        //FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS is the attribute to tell the antivirus software to skip the scanning.//it requires the driver was loaded.
+
+                        uint fileAttribute = (uint)FileAttributes.Offline; //FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
+                        
+                        ret = FilterAPI.CreateStubFileEx(stubFileName, fileInfo.Length, fileAttribute,
                             (uint)tagData.Length, Marshal.UnsafeAddrOfPinnedArrayElement(tagData, 0), 0, 0, 0, true, ref fileHandle);
                         if (!ret)
                         {
                            EventManager.WriteMessage(100, "createTestStubFile", EventLevel.Error, "Create stub file:" + stubFileName + " failed.\n" + FilterAPI.GetLastErrorMessage());
                            continue;
                         }
+
+                        totalStubFile++;
                     }
                     catch (Exception ex)
                     {
@@ -150,9 +154,7 @@ namespace CloudTierDemo
                         {
                             FilterAPI.CloseHandle(fileHandle);
                         }
-                    }
-
-                    totalStubFile++;
+                    }                  
 
                 }
 

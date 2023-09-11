@@ -388,8 +388,8 @@ namespace EaseFilter.CommonObjects
                 {
                     switch (output)
                     {
-                        case EventOutputType.EventView: SendMessageToEventView(message); break;
-                        //  case EventOutputType.File: SendMessageToFile(message); break;
+                        //case EventOutputType.EventView: SendMessageToEventView(message); break;
+                        case EventOutputType.File: SendMessageToFile(message); break;
                         case EventOutputType.Console: SendMessageToConsole(message); break;
                         case EventOutputType.CallbackDelegate: messageEventHandler(message); break;
                         case EventOutputType.NamedPipe: SendMessageToNamedpipe(message); break;

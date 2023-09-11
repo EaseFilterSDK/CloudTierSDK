@@ -1,6 +1,6 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
 //
-//    (C) Copyright 2011 EaseFilter Technologies Inc.
+//    (C) Copyright 2011 EaseFilter
 //    All Rights Reserved
 //
 //    This software is part of a licensed software product and may
@@ -29,9 +29,6 @@ namespace EaseFilter.CommonObjects
 
     public class GlobalConfig
     {
-        //Purchase a license key with the link: http://www.easefilter.com/Order.htm
-        //Email us to request a trial key: info@easefilter.com //free email is not accepted.
-        public static string registerKey = "****************************************************";
 
         static Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
         public static string AssemblyPath = Path.GetDirectoryName(assembly.Location);
@@ -313,6 +310,26 @@ namespace EaseFilter.CommonObjects
             {
                 reOpenFileOneReHydration = value;
                 ConfigSetting.Set("reOpenFileOneReHydration", value.ToString());
+            }
+        }
+
+        public static string LicenseKey
+        {
+            get
+            {
+                //Purchase a license key with the link: http://www.easefilter.com/Order.htm
+                //Email us to request a trial key: info@easefilter.com //free email is not accepted.
+                string licenseKey = "";
+
+                if (string.IsNullOrEmpty(licenseKey))
+                {
+                    System.Windows.Forms.MessageBox.Show("You don't have a valid license key, Please contact support@easefilter.com to get a trial key.", "LicenseKey",
+                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                }
+
+
+                return licenseKey;
+                       
             }
         }
 

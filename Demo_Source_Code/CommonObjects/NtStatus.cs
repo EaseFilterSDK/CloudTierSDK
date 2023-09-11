@@ -1,7 +1,7 @@
 ﻿
 ///////////////////////////////////////////////////////////////////////////////
 //
-//    (C) Copyright 2011 EaseFilter Technologies Inc.
+//    (C) Copyright 2011 EaseFilter
 //    All Rights Reserved
 //
 //    This software is part of a licensed software product and may

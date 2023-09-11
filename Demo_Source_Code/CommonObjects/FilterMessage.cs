@@ -1,6 +1,6 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
 //
-//    (C) Copyright 2011 EaseFilter Technologies Inc.
+//    (C) Copyright 2011 EaseFilter
 //    All Rights Reserved
 //
 //    This software is part of a licensed software product and may
@@ -27,18 +27,22 @@ namespace EaseFilter.CommonObjects
 
     public class FilterMessage : IDisposable
     {
-      
+
+        int maxMessageColumns = 16;
         ListView listView_Message = null;
         Thread messageThread = null;
         Queue<string[]> messageQueue = new Queue<string[]>();
         AutoResetEvent autoEvent = new AutoResetEvent(false);
         bool disposed = false;
-
-
-        public FilterMessage(ListView lvMessage)
+        bool isConsoleApp = false;
+        
+        public FilterMessage(ListView lvMessage, bool _isConsoleApp)
         {
+            this.isConsoleApp = _isConsoleApp;
+
             this.listView_Message = lvMessage;
             InitListView();
+
             messageThread = new Thread(new ThreadStart(ProcessMessage));
             messageThread.Start();
         }
@@ -68,25 +72,29 @@ namespace EaseFilter.CommonObjects
         public void InitListView()
         {
             messageQueue.Clear();
-            //init ListView control
-            listView_Message.Clear();		//clear control
-            //create column header for ListView
-            listView_Message.Columns.Add("#", 40, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("Time", 120, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("UserName", 150, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("ProcessName(PID)", 100, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("ThreadId", 60, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("MessageType", 160, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("FileName", 350, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("FileSize", 70, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("FileAttributes", 70, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("LastWriteTime", 120, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("Offset", 50, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("Length", 50, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("ReturnStatus", 50, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("ReturnFilterStatus", 50, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("ReturnBufferLength", 50, System.Windows.Forms.HorizontalAlignment.Left);
-            listView_Message.Columns.Add("Description", 200, System.Windows.Forms.HorizontalAlignment.Left);
+
+            if (null != listView_Message)
+            {
+                //init ListView control
+                listView_Message.Clear();		//clear control
+                //create column header for ListView
+                listView_Message.Columns.Add("#", 40, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("Time", 120, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("UserName", 150, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ProcessName(PID)", 100, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ThreadId", 60, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("MessageType", 160, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("FileName", 350, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("FileSize", 70, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("FileAttributes", 70, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("LastWriteTime", 120, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("Offset", 50, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("Length", 50, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ReturnStatus", 50, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ReturnFilterStatus", 50, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ReturnBufferLength", 50, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("Description", 200, System.Windows.Forms.HorizontalAlignment.Left);
+            }
         }
 
         public void AddMessage(FilterAPI.MessageSendData messageSend, FilterAPI.MessageReplyData messageReply)
@@ -130,17 +138,34 @@ namespace EaseFilter.CommonObjects
                         {
                             string[] message = (string[])messageQueue.Dequeue();
 
-                            ListViewItem lvItem = new ListViewItem(message, 0);
-
-                            listView_Message.Items.Add(lvItem);
-
-                            if (listView_Message.Items.Count > 0 && listView_Message.Items.Count > GlobalConfig.MaximumFilterMessages)
+                            if (isConsoleApp)
                             {
-                                //the message records in the list view reached to the maximum value, remove the first one till the record less than the maximum value.
-                                listView_Message.Items.RemoveAt(0);
+                                Console.WriteLine("Id#" + message[0]);
+                                Console.WriteLine("UserName:" + message[2]);
+                                Console.WriteLine("ProcessName(PID):" + message[3]);
+                                Console.WriteLine("MessageType:" + message[5]);
+                                Console.WriteLine("FileName:" + message[6]);
+                                Console.WriteLine("FileSize:" + message[7]);
+                                Console.WriteLine("FileAttributes:" + message[8]);
+                                Console.WriteLine("Offset:" + message[10]);
+                                Console.WriteLine("Length:" + message[11]);
+                               
                             }
+                            else
+                            {
 
-                            listView_Message.EnsureVisible(listView_Message.Items.Count - 1);
+                                ListViewItem lvItem = new ListViewItem(message, 0);
+
+                                listView_Message.Items.Add(lvItem);
+
+                                if (listView_Message.Items.Count > 0 && listView_Message.Items.Count > GlobalConfig.MaximumFilterMessages)
+                                {
+                                    //the message records in the list view reached to the maximum value, remove the first one till the record less than the maximum value.
+                                    listView_Message.Items.RemoveAt(0);
+                                }
+
+                                listView_Message.EnsureVisible(listView_Message.Items.Count - 1);
+                            }
 
                         }
                     }
@@ -273,7 +298,8 @@ namespace EaseFilter.CommonObjects
 
                 FilterAPI.DecodeUserInfo(messageSend, out userName, out processName);
 
-                string[] listData = new string[listView_Message.Columns.Count];
+                string[] listData = new string[maxMessageColumns];
+
                 int col = 0;
                 listData[col++] = messageSend.MessageId.ToString();
                 listData[col++] = FormatDateTime(messageSend.TransactionTime);

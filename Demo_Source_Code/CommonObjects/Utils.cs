@@ -1,6 +1,6 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
 //
-//    (C) Copyright 2012 EaseFilter Technologies Inc.
+//    (C) Copyright 2012 EaseFilter
 //    All Rights Reserved
 //
 //    This software is part of a licensed software product and may
@@ -34,43 +34,6 @@ namespace EaseFilter.CommonObjects
 
     public class Utils
     {
-        public static bool IsDriverChanged()
-        {
-            bool ret = false;
-
-            try
-            {
-                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
-                string localPath = Path.GetDirectoryName(assembly.Location);
-                string driverName = Path.Combine(localPath, "CloudTier.sys");
-
-                if (File.Exists(driverName))
-                {
-                    string driverInstalledPath = Path.Combine(Environment.SystemDirectory, "drivers\\CloudTier.sys");
-
-                    if (File.Exists(driverInstalledPath))
-                    {
-                        FileInfo fsInstalled = new FileInfo(driverInstalledPath);
-                        FileInfo fsToInstall = new FileInfo(driverName);
-
-                        if (fsInstalled.LastWriteTime != fsToInstall.LastWriteTime)
-                        {
-                            return true;
-                        }
-                    }
-
-                }
-
-            }
-            catch
-            {
-                ret = false;
-            }
-
-            return ret;
-        }
-
-
         public static uint WinMajorVersion()
         {
             dynamic major;
@@ -135,6 +98,42 @@ namespace EaseFilter.CommonObjects
             }
         }
 
+        public static bool IsDriverChanged()
+        {
+            bool ret = false;
+
+            try
+            {
+                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
+                string localPath = Path.GetDirectoryName(assembly.Location);
+                string driverName = Path.Combine(localPath, "CloudTier.sys");
+
+                if (File.Exists(driverName))
+                {
+                    string driverInstalledPath = Path.Combine(Environment.SystemDirectory, "drivers\\cloudtier.sys");
+
+                    if (File.Exists(driverInstalledPath))
+                    {
+                        FileInfo fsInstalled = new FileInfo(driverInstalledPath);
+                        FileInfo fsToInstall = new FileInfo(driverName);
+
+                        if (fsInstalled.LastWriteTime != fsToInstall.LastWriteTime)
+                        {
+                            return true;
+                        }
+                    }
+
+                }
+
+            }
+            catch
+            {
+                ret = false;
+            }
+
+            return ret;
+        }
+
         public static void CopyOSPlatformDependentFiles()
         {
             Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
@@ -151,14 +150,7 @@ namespace EaseFilter.CommonObjects
 
                 if (is64BitOperatingSystem)
                 {
-                    if (winMajorVersion >= 10)
-                    {
-                        sourceFolder = Path.Combine(localPath, "Bin\\Win10X64");
-                    }
-                    else
-                    {
-                        sourceFolder = Path.Combine(localPath, "Bin\\x64");
-                    }
+                    sourceFolder = Path.Combine(localPath, "Bin\\x64");
                 }
                 else
                 {

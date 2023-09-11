@@ -17,12 +17,7 @@ namespace CloudTierDemo
 {
     public partial class CloudTierDemoForm : Form
     {
-        FilterMessage filterMessage = null;
-
-        //Purchase a license key with the link: http://www.easefilter.com/Order.htm
-        //Email us to request a trial key: info@easefilter.com //free email is not accepted.
-        string registerKey = GlobalConfig.registerKey;
-
+       
         Boolean isMessageDisplayed = false;
 
         public CloudTierDemoForm()
@@ -31,9 +26,7 @@ namespace CloudTierDemo
 
             Utils.CopyOSPlatformDependentFiles();
 
-            StartPosition = FormStartPosition.CenterScreen;
-            filterMessage = new FilterMessage(listView_Info);
-
+            StartPosition = FormStartPosition.CenterScreen;            
             GlobalConfig.EventLevel = EventLevel.Verbose;
 
             DisplayVersion();
@@ -65,39 +58,25 @@ namespace CloudTierDemo
 
         private void toolStripButton_StartFilter_Click(object sender, EventArgs e)
         {
-            try
-            {
-                string lastError = string.Empty;                
+            string lastError = string.Empty;
 
-                bool ret = FilterAPI.StartFilter(registerKey
-                                            , (int)GlobalConfig.FilterConnectionThreads
-                                            , new FilterAPI.FilterDelegate(FilterCallback)
-                                            , new FilterAPI.DisconnectDelegate(DisconnectCallback)
-                                            , ref lastError);
-                if (!ret)
-                {
+            if (!FilterWorker.StartService(FilterWorker.StartType.GuiApp, listView_Info, out lastError))
+            {
                     MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
                     MessageBox.Show("Start filter failed." + lastError);
                     return;
-                }
-
-                toolStripButton_StartFilter.Enabled = false;
-                toolStripButton_Stop.Enabled = true;
-
-                GlobalConfig.SendConfigSettingsToFilter();
-
-                EventManager.WriteMessage(102, "StartFilter", EventLevel.Information, "Start filter service succeeded.");
             }
-            catch (Exception ex)
-            {
-                EventManager.WriteMessage(104, "StartFilter", EventLevel.Error, "Start filter service failed with error " + ex.Message);
-            }
+
+            toolStripButton_StartFilter.Enabled = false;
+            toolStripButton_Stop.Enabled = true;
+
+            EventManager.WriteMessage(102, "StartFilter", EventLevel.Information, "Start filter service succeeded.");
 
         }
 
         private void toolStripButton_Stop_Click(object sender, EventArgs e)
         {
-            FilterAPI.StopFilter();
+            FilterWorker.StopService();
 
             toolStripButton_StartFilter.Enabled = true;
             toolStripButton_Stop.Enabled = false;
@@ -105,68 +84,8 @@ namespace CloudTierDemo
 
         private void toolStripButton_ClearMessage_Click(object sender, EventArgs e)
         {
-            filterMessage.InitListView();
+            listView_Info.Clear();
         }
-
-        Boolean FilterCallback(IntPtr sendDataPtr, IntPtr replyDataPtr)
-        {
-            Boolean ret = true;
-
-            try
-            {
-                FilterAPI.MessageSendData messageSend = new FilterAPI.MessageSendData();
-                messageSend = (FilterAPI.MessageSendData)Marshal.PtrToStructure(sendDataPtr, typeof(FilterAPI.MessageSendData));
-
-                if (FilterAPI.MESSAGE_SEND_VERIFICATION_NUMBER != messageSend.VerificationNumber)
-                {
-                    MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
-                    MessageBox.Show("Received message corrupted.Please check if the MessageSendData structure is correct.");
-
-                    EventManager.WriteMessage(139, "FilterCallback", EventLevel.Error, "Received message corrupted.Please check if the MessageSendData structure is correct.");
-                    return false;
-                }
-              
-                //here we store our cache file name in stub file tag data, you can customize your own tag data here.
-                if (messageSend.DataBufferLength == 0)
-                {
-                    Console.WriteLine("There are no tag data for stub file " + messageSend.FileName + ", return false here.");
-                    return false;
-                }
-
-                FilterAPI.MessageReplyData messageReply = new FilterAPI.MessageReplyData();
-              
-                if (replyDataPtr.ToInt64() != 0)
-                {
-                    messageReply = (FilterAPI.MessageReplyData)Marshal.PtrToStructure(replyDataPtr, typeof(FilterAPI.MessageReplyData));
-
-                    messageReply.MessageId = messageSend.MessageId;
-                    messageReply.MessageType = messageSend.MessageType;
-
-                    //here you can control the IO behaviour and modify the data.
-                    RequestHandler.ProcessRequest(messageSend,ref messageReply);
-
-                    Marshal.StructureToPtr(messageReply, replyDataPtr, true);
-                }
-
-
-                filterMessage.AddMessage(messageSend, messageReply);
-
-                return ret;
-            }
-            catch (Exception ex)
-            {
-                EventManager.WriteMessage(134, "FilterCallback", EventLevel.Error, "filter callback exception." + ex.Message);
-                return false;
-            }
-
-        }
-
-        void DisconnectCallback()
-        {
-            MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
-            MessageBox.Show("Filter Disconnected." + FilterAPI.GetLastErrorMessage(), "Filter Disconnected.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -189,7 +108,7 @@ namespace CloudTierDemo
       
         private void uninstallDriverToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FilterAPI.StopFilter();
+            FilterWorker.StopService();
             FilterAPI.UnInstallDriver();
         }
 
@@ -200,15 +119,13 @@ namespace CloudTierDemo
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FilterAPI.StopFilter();
-            GlobalConfig.Stop();
+            FilterWorker.StopService();
             Application.Exit();
         }
 
         private void demoForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            FilterAPI.StopFilter();
-            GlobalConfig.Stop();
+            FilterWorker.StopService();
         }
      
         private void CloudTierDemoForm_Shown(object sender, EventArgs e)
@@ -220,8 +137,6 @@ namespace CloudTierDemo
                 MessageBox.Show("Some test stub files were created in folder " + TestStubFileForms.stubFilesFolder + ". You can test those stub files in test folder, if you want to create more stub files, you can go to 'Tools->Create test stub file' to create your own stub files.");
             }
         }
-
-
 
     }
 }

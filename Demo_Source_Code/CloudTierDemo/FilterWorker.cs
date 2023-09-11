@@ -4,14 +4,125 @@ using System.IO;
 using Microsoft.Win32.SafeHandles;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Windows.Forms;
 
 using EaseFilter.CommonObjects;
 
 namespace CloudTierDemo
 {
-    public class RequestHandler
+    public class FilterWorker
     {
+        public enum StartType
+        {
+            WindowsService = 0,
+            GuiApp,
+            ConsoleApp
+        }
 
+        static StartType startType = StartType.GuiApp;
+        static FilterMessage filterMessage = null;
+
+        public static bool StartService(StartType _startType, ListView listView_Message, out string lastError)
+        {
+            bool ret = false;
+            lastError = string.Empty;
+
+            startType = _startType;
+
+            try
+            {
+                //Purchase a license key with the link: http://www.easefilter.com/Order.htm
+                //Email us to request a trial key: info@easefilter.com //free email is not accepted.
+                string licenseKey =  GlobalConfig.LicenseKey;                           
+
+                ret = FilterAPI.StartFilter(licenseKey
+                                            , (int)GlobalConfig.FilterConnectionThreads
+                                            , new FilterAPI.FilterDelegate(FilterCallback)
+                                            , new FilterAPI.DisconnectDelegate(DisconnectCallback)
+                                            , ref lastError);
+                if (!ret)
+                {
+                    return ret;
+                }
+
+                GlobalConfig.SendConfigSettingsToFilter();
+
+                filterMessage = new FilterMessage(listView_Message, startType == StartType.ConsoleApp);
+
+            }
+            catch (Exception ex)
+            {
+                EventManager.WriteMessage(104, "StartFilter", EventLevel.Error, "Start filter service failed with error " + ex.Message);
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        public static bool StopService()
+        {
+            GlobalConfig.Stop();
+            FilterAPI.StopFilter();
+
+            return true;
+        }
+
+        static Boolean FilterCallback(IntPtr sendDataPtr, IntPtr replyDataPtr)
+        {
+            Boolean ret = true;
+
+            try
+            {
+                FilterAPI.MessageSendData messageSend = new FilterAPI.MessageSendData();
+                messageSend = (FilterAPI.MessageSendData)Marshal.PtrToStructure(sendDataPtr, typeof(FilterAPI.MessageSendData));
+
+                if (FilterAPI.MESSAGE_SEND_VERIFICATION_NUMBER != messageSend.VerificationNumber)
+                {
+                    EventManager.WriteMessage(139, "FilterCallback", EventLevel.Error, "Received message corrupted.Please check if the MessageSendData structure is correct.");
+                    return false;
+                }
+              
+                //here we store our cache file name in stub file tag data, you can customize your own tag data here.
+                if (messageSend.DataBufferLength == 0)
+                {
+                    Console.WriteLine("There are no tag data for stub file " + messageSend.FileName + ", return false here.");
+                    return false;
+                }
+
+                FilterAPI.MessageReplyData messageReply = new FilterAPI.MessageReplyData();
+              
+                if (replyDataPtr.ToInt64() != 0)
+                {
+                    messageReply = (FilterAPI.MessageReplyData)Marshal.PtrToStructure(replyDataPtr, typeof(FilterAPI.MessageReplyData));
+
+                    messageReply.MessageId = messageSend.MessageId;
+                    messageReply.MessageType = messageSend.MessageType;
+
+                    //here you can control the IO behaviour and modify the data.
+                    FilterWorker.ProcessRequest(messageSend,ref messageReply);
+
+                    Marshal.StructureToPtr(messageReply, replyDataPtr, true);
+                }
+
+                if (startType != StartType.WindowsService)
+                {
+                    filterMessage.AddMessage(messageSend, messageReply);
+                }
+
+                return ret;
+            }
+            catch (Exception ex)
+            {
+                EventManager.WriteMessage(134, "FilterCallback", EventLevel.Error, "filter callback exception." + ex.Message);
+                return false;
+            }
+
+        }
+
+        static void DisconnectCallback()
+        {
+            Console.WriteLine("Filter Disconnected.");
+        }
 
         /// <summary>
         /// This function just demo how to create cache file from test folder, in your application you can get it from remote site with TCP/IP.
@@ -62,7 +173,7 @@ namespace CloudTierDemo
                         messageReply.DataBufferLength = (uint)returnCacheFileName.Length * 2;
                         Array.Copy(Encoding.Unicode.GetBytes(returnCacheFileName), messageReply.DataBuffer, messageReply.DataBufferLength);
 
-                        //if you want to restore the stub file, please return with RESTORE_STUB_FILE_WITH_CACHE_FILE
+                        //if you want to rehydrate the stub file, please return with REHYDRATE_FILE_VIA_CACHE_FILE
                         if (GlobalConfig.RehydrateFileOnFirstRead)
                         {
                             messageReply.FilterStatus = (uint)FilterAPI.FilterStatus.REHYDRATE_FILE_VIA_CACHE_FILE;
