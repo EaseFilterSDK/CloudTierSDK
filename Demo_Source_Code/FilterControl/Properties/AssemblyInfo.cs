@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CommonObjects")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("FilterControl")]
+[assembly: AssemblyDescription("Filter Driver Control")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("CloudTier")]
-[assembly: AssemblyProduct("CommonObjects")]
-[assembly: AssemblyCopyright("Copyright ©EaseFilter")]
+[assembly: AssemblyProduct("FilterControl")]
+[assembly: AssemblyCopyright("Copyright © CloudTier")]
 [assembly: AssemblyTrademark("CloudTier")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("f3f3dcf2-9506-4af9-9501-e68ace0c1e59")]
+[assembly: Guid("3892f925-fb49-4980-b6c0-130efd02c3ca")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -32,5 +32,6 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("3.2.6.1002")]
+[assembly: AssemblyVersion("3.2.6.1001")]
 //[assembly: AssemblyFileVersion("3.2.1.2008")]
+

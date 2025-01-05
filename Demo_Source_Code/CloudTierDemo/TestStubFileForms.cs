@@ -9,7 +9,8 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
 
-using EaseFilter.CommonObjects;
+using CloudTier.CommonObjects;
+using CloudTier.FilterControl;
 
 namespace CloudTierDemo
 {

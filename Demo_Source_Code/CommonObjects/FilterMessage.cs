@@ -9,30 +9,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.Security.Principal;
-using System.IO;
-using System.Threading;
-using System.Reflection;
 
-namespace EaseFilter.CommonObjects
+using CloudTier.FilterControl;
+
+namespace CloudTier.CommonObjects
 {
 
 
     public class FilterMessage : IDisposable
     {
 
-        int maxMessageColumns = 16;
         ListView listView_Message = null;
-        Thread messageThread = null;
-        Queue<string[]> messageQueue = new Queue<string[]>();
-        AutoResetEvent autoEvent = new AutoResetEvent(false);
         bool disposed = false;
         bool isConsoleApp = false;
         
@@ -42,9 +30,6 @@ namespace EaseFilter.CommonObjects
 
             this.listView_Message = lvMessage;
             InitListView();
-
-            messageThread = new Thread(new ThreadStart(ProcessMessage));
-            messageThread.Start();
         }
 
         public void Dispose()
@@ -59,8 +44,6 @@ namespace EaseFilter.CommonObjects
             {
             }
 
-            autoEvent.Set();
-            messageThread.Abort();
             disposed = true;
         }
 
@@ -71,300 +54,83 @@ namespace EaseFilter.CommonObjects
 
         public void InitListView()
         {
-            messageQueue.Clear();
-
             if (null != listView_Message)
             {
                 //init ListView control
                 listView_Message.Clear();		//clear control
                 //create column header for ListView
                 listView_Message.Columns.Add("#", 40, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("Time", 120, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("Time", 50, System.Windows.Forms.HorizontalAlignment.Left);
                 listView_Message.Columns.Add("UserName", 150, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("ProcessName(PID)", 100, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("ThreadId", 60, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ProcessName(PID)", 120, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ThreadId", 70, System.Windows.Forms.HorizontalAlignment.Left);
                 listView_Message.Columns.Add("MessageType", 160, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("FileName", 350, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("FileSize", 70, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("FileAttributes", 70, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("LastWriteTime", 120, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("FileName", 200, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("FileSize", 50, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("FileAttributes", 100, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("LastWriteTime", 60, System.Windows.Forms.HorizontalAlignment.Left);
                 listView_Message.Columns.Add("Offset", 50, System.Windows.Forms.HorizontalAlignment.Left);
                 listView_Message.Columns.Add("Length", 50, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("ReturnStatus", 50, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("ReturnFilterStatus", 50, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("ReturnBufferLength", 50, System.Windows.Forms.HorizontalAlignment.Left);
-                listView_Message.Columns.Add("Description", 200, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ReturnStatus", 100, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ReturnFilterStatus", 150, System.Windows.Forms.HorizontalAlignment.Left);
+                listView_Message.Columns.Add("ReturnBufferLength", 100, System.Windows.Forms.HorizontalAlignment.Left);
             }
         }
 
-        public void AddMessage(FilterAPI.MessageSendData messageSend, FilterAPI.MessageReplyData messageReply)
+        public void DisplayMessage(FilterRequestEventArgs e)
         {
 
-            string[] message = DecodeFilterMessage(messageSend, messageReply);
-          
-            lock (messageQueue)
+            if (isConsoleApp)
             {
-                if (message != null)
-                {
-                    messageQueue.Enqueue(message);
-                }
+                Console.WriteLine(Environment.NewLine + "Id#" + e.MessageId);
+                Console.WriteLine("UserName:" + e.UserName);
+                Console.WriteLine("ProcessId:" + e.ProcessId);
+                Console.WriteLine("ProcessName(PID):" + e.ProcessName);
+                Console.WriteLine("MessageType:" + e.MessageType);
+                Console.WriteLine("FileName:" + e.FileName);
+                Console.WriteLine("FileSize:" + e.FileSize);
+                Console.WriteLine("FileAttributes:" + e.Attributes.ToString());
+                Console.WriteLine("Offset:" + e.ReadOffset);
+                Console.WriteLine("Length:" + e.ReadLength);
+                Console.WriteLine("ReturnStatus:" + e.ReturnStatus.ToString());
+                Console.WriteLine("ReturnFilterStatus:" + e.FilterStatus.ToString());
+                Console.WriteLine("ReturnBufferLength:" + e.ReturnBufferLength.ToString());
+
             }
-
-            autoEvent.Set();
-
-        }
-
-
-        void ProcessMessage()
-        {
-            WaitHandle[] waitHandles = new WaitHandle[] { autoEvent, GlobalConfig.stopEvent };
-
-            while (GlobalConfig.isRunning)
+            else
             {
-                try
+                string[] item = new string[listView_Message.Columns.Count];
+                item[0] = e.MessageId.ToString();
+                item[1] = FormatDateTime(DateTime.Now.ToFileTime());
+                item[2] = e.UserName;
+                item[3] = e.ProcessName + "(" + e.ProcessId.ToString() + ")";
+                item[4] = e.ThreadId.ToString();
+                item[5] = e.MessageType.ToString();
+                item[6] = e.FileName;
+                item[7] = e.FileSize.ToString();
+                item[8] = e.Attributes.ToString();
+                item[9] = FormatDateTime(e.LastWriteTime);
+                item[10] = e.ReadOffset.ToString();
+                item[11] = e.ReadLength.ToString();
+                item[12] = e.ReturnStatus.ToString();
+                item[13] = e.FilterStatus.ToString();
+                item[14] = e.ReturnBufferLength.ToString();
+
+                ListViewItem lvItem = new ListViewItem(item, 0);
+
+                listView_Message.Items.Add(lvItem);
+
+                if (listView_Message.Items.Count > 0 && listView_Message.Items.Count > GlobalConfig.MaximumFilterMessages)
                 {
-                    if (messageQueue.Count == 0)
-                    {
-                        int result = WaitHandle.WaitAny(waitHandles);
-                        if (!GlobalConfig.isRunning)
-                        {
-                            return;
-                        }
-                    }
-
-                    lock (messageQueue)
-                    {
-                        while (messageQueue.Count > 0)
-                        {
-                            string[] message = (string[])messageQueue.Dequeue();
-
-                            if (isConsoleApp)
-                            {
-                                Console.WriteLine("Id#" + message[0]);
-                                Console.WriteLine("UserName:" + message[2]);
-                                Console.WriteLine("ProcessName(PID):" + message[3]);
-                                Console.WriteLine("MessageType:" + message[5]);
-                                Console.WriteLine("FileName:" + message[6]);
-                                Console.WriteLine("FileSize:" + message[7]);
-                                Console.WriteLine("FileAttributes:" + message[8]);
-                                Console.WriteLine("Offset:" + message[10]);
-                                Console.WriteLine("Length:" + message[11]);
-                               
-                            }
-                            else
-                            {
-
-                                ListViewItem lvItem = new ListViewItem(message, 0);
-
-                                listView_Message.Items.Add(lvItem);
-
-                                if (listView_Message.Items.Count > 0 && listView_Message.Items.Count > GlobalConfig.MaximumFilterMessages)
-                                {
-                                    //the message records in the list view reached to the maximum value, remove the first one till the record less than the maximum value.
-                                    listView_Message.Items.RemoveAt(0);
-                                }
-
-                                listView_Message.EnsureVisible(listView_Message.Items.Count - 1);
-                            }
-
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    EventManager.WriteMessage(165, "ProcessMessage", EventLevel.Error, "ProcessMessage failed with error " + ex.Message);
+                    //the message records in the list view reached to the maximum value, remove the first one till the record less than the maximum value.
+                    listView_Message.Items.RemoveAt(0);
                 }
 
-
+                listView_Message.EnsureVisible(listView_Message.Items.Count - 1);
             }
 
         }
 
-
-
-        string FormatDescription(FilterAPI.MessageSendData messageSend)
-        {
-
-            string message = string.Empty;
-            try
-            {
-                if (messageSend.MessageType == (uint)FilterAPI.MessageType.MESSAGE_TYPE_SEND_EVENT_NOTIFICATION)
-                {
-                    FilterAPI.EVENTTYPE eventType = (FilterAPI.EVENTTYPE)messageSend.InfoClass;
-                    string fileName = messageSend.FileName;
-
-                    switch (eventType)
-                    {
-                        case FilterAPI.EVENTTYPE.CREATEED:
-                            {
-                                message = "File Created Event: new file " + fileName + " created.";
-                                break;
-                            }
-                        case FilterAPI.EVENTTYPE.CHANGED:
-                            {
-                                message = "File Modified Event: file " + fileName + " was modified.";
-                                break;
-                            }
-                        case FilterAPI.EVENTTYPE.DELETED:
-                            {
-                                message = "File Deleted Event: file " + fileName + " was deleted.";
-                                break;
-                            }
-                        case FilterAPI.EVENTTYPE.RENAMED:
-                            {
-                                string newFileName = string.Empty;
-
-                                if (messageSend.DataBufferLength > 0)
-                                {
-                                    byte[] buffer = new byte[messageSend.DataBufferLength];
-                                    Array.Copy(messageSend.DataBuffer, buffer, buffer.Length);
-                                    newFileName = Encoding.Unicode.GetString(buffer);
-                                }
-
-                                message = "File Rename Event: file " + fileName + " was renamed to " + newFileName;
-                                break;
-                            }
-                        default: message = "File Event:" + messageSend.InfoClass + " not found, file " + fileName;
-                            break;
-                    }
-
-                }
-                else
-                {
-                    message += " DesiredAccess:" + FormatDesiredAccess(messageSend.DesiredAccess);
-                    message += " Disposition:" + ((WinData.Disposition)messageSend.Disposition).ToString();
-                    message += " ShareAccess:" + ((WinData.ShareAccess)messageSend.SharedAccess).ToString();
-                    message += " CreateOptions:" + FormatCreateOptions(messageSend.CreateOptions);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                EventManager.WriteMessage(318, "FormatDescription", EventLevel.Error, "Format description failed with error " + ex.Message);
-            }
-
-
-            return message;
-        }
-
-        string FormatNTStatus(uint status)
-        {
-            string ret = string.Empty;
-
-            foreach (NtStatus.Status ntStatus in Enum.GetValues(typeof(NtStatus.Status)))
-            {
-                if (status == (uint)ntStatus)
-                {
-                    ret = ntStatus.ToString() + "(0x" + status.ToString("X") + ")";
-                }
-            }
-
-            if (string.IsNullOrEmpty(ret))
-            {
-                ret = "(0x" + status.ToString("X") + ")";
-            }
-
-            return ret;
-        }
-
-        string FormatFilterStatus(uint status)
-        {
-            string ret = string.Empty;
-
-            foreach (FilterAPI.FilterStatus filterStatus in Enum.GetValues(typeof(FilterAPI.FilterStatus)))
-            {
-                if (status == (uint)filterStatus)
-                {
-                    ret = filterStatus.ToString() + "(0x" + status.ToString("X") + ")";
-                }
-            }
-
-            if (string.IsNullOrEmpty(ret))
-            {
-                ret = "(0x" + status.ToString("X") + ")";
-            }
-
-            return ret;
-        }
-
-
-        string[] DecodeFilterMessage(FilterAPI.MessageSendData messageSend, FilterAPI.MessageReplyData messageReply)
-        {
-            try
-            {
-
-                string userName = string.Empty;
-                string processName = string.Empty;
-
-                FilterAPI.DecodeUserInfo(messageSend, out userName, out processName);
-
-                string[] listData = new string[maxMessageColumns];
-
-                int col = 0;
-                listData[col++] = messageSend.MessageId.ToString();
-                listData[col++] = FormatDateTime(messageSend.TransactionTime);
-                listData[col++] = userName;
-                listData[col++] = processName + "  (" + messageSend.ProcessId + ")";
-                listData[col++] = messageSend.ThreadId.ToString();
-                listData[col++] = ((FilterAPI.MessageType)messageSend.MessageType).ToString();
-                listData[col++] = messageSend.FileName;
-                listData[col++] = messageSend.FileSize.ToString();
-                listData[col++] = ((FileAttributes)messageSend.FileAttributes).ToString();
-                listData[col++] = FormatDateTime(messageSend.LastWriteTime);
-                listData[col++] = messageSend.Offset.ToString();
-                listData[col++] = messageSend.Length.ToString();
-                listData[col++] = FormatNTStatus(messageReply.ReturnStatus);
-                listData[col++] = FormatFilterStatus(messageReply.FilterStatus);
-                listData[col++] = messageReply.DataBufferLength.ToString();
-                listData[col++] = FormatDescription(messageSend);
-
-                return listData;
-
-            }
-            catch (Exception ex)
-            {
-                EventManager.WriteMessage(303, "DecodeFilterMessage", EventLevel.Error, "DecodeFilterMessage failed." + ex.Message);
-            }
-
-            return null;
-        }
-
-
-
-        string FormatDesiredAccess(uint desiredAccess)
-        {
-            string ret = string.Empty;
-
-            foreach (WinData.DisiredAccess access in Enum.GetValues(typeof(WinData.DisiredAccess)))
-            {
-                if (access == (WinData.DisiredAccess)((uint)access & desiredAccess))
-                {
-                    ret += access.ToString() + "; ";
-                }
-            }
-
-            return ret;
-        }
-
-        string FormatCreateOptions(uint createOptions)
-        {
-            string ret = string.Empty;
-
-            foreach (WinData.CreateOptions option in Enum.GetValues(typeof(WinData.CreateOptions)))
-            {
-                if (option == (WinData.CreateOptions)((uint)option & createOptions))
-                {
-                    ret += option.ToString() + "; ";
-                }
-            }
-
-            if (string.IsNullOrEmpty(ret))
-            {
-                ret = "(0x)" + createOptions.ToString("X");
-            }
-
-            return ret;
-        }
 
         string FormatDateTime(long lDateTime)
         {

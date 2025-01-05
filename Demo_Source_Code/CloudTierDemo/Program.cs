@@ -8,7 +8,8 @@ using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 
-using EaseFilter.CommonObjects;
+using CloudTier.CommonObjects;
+using CloudTier.FilterControl;
 
 namespace CloudTierDemo
 {
@@ -145,8 +146,16 @@ namespace CloudTierDemo
 
                             break;
                         }
+                    case "-help":
+                        {
+                            PrintUsage();
+                            break;
+                        }
                     default:
+                        
                         Console.WriteLine("The command " + command + " doesn't support.");
+                        PrintUsage();
+
                         break;
                 }
             }
@@ -179,6 +188,18 @@ namespace CloudTierDemo
                     Application.Run(new CloudTierDemoForm());
                 }
             }
+        }
+
+        static void PrintUsage()
+        {
+            Console.WriteLine("Usage: CloudTierDemo command");
+            Console.WriteLine("Commands:");
+            Console.WriteLine("                     --start the Windows forms application.");
+            Console.WriteLine("-InstallDriver       --Install EaseFilter filter driver.");
+            Console.WriteLine("-UninstallDriver     --Uninstall EaseFilter filter driver.");
+            Console.WriteLine("-InstallService      --Install EaseFilter Windows service.");
+            Console.WriteLine("-UnInstallService    --Uninstall EaseFilter Windows service.");
+            Console.WriteLine("-Console             ---start the console application.");
         }
     }
 }

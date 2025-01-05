@@ -24,7 +24,8 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 
-using EaseFilter.CommonObjects;
+using CloudTier.CommonObjects;
+using CloudTier.FilterControl;
 
 namespace CloudTierDemo
 {

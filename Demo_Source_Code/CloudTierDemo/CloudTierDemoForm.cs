@@ -11,20 +11,21 @@ using System.IO;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-using EaseFilter.CommonObjects;
+using CloudTier.CommonObjects;
+using CloudTier.FilterControl;
 
 namespace CloudTierDemo
 {
     public partial class CloudTierDemoForm : Form
-    {
-       
+    {       
         Boolean isMessageDisplayed = false;
 
         public CloudTierDemoForm()
         {
             InitializeComponent();
 
-            Utils.CopyOSPlatformDependentFiles();
+            string lastError = string.Empty;
+            Utils.CopyOSPlatformDependentFiles(ref lastError);
 
             StartPosition = FormStartPosition.CenterScreen;            
             GlobalConfig.EventLevel = EventLevel.Verbose;
@@ -36,6 +37,7 @@ namespace CloudTierDemo
         ~CloudTierDemoForm()
         {
             GlobalConfig.Stop();
+            FilterWorker.StopService();
         }
 
         private void DisplayVersion()
@@ -63,7 +65,7 @@ namespace CloudTierDemo
             if (!FilterWorker.StartService(FilterWorker.StartType.GuiApp, listView_Info, out lastError))
             {
                     MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
-                    MessageBox.Show("Start filter failed." + lastError);
+                    MessageBox.Show("Start filter failed." + lastError, "StartFilter", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
             }
 
@@ -76,6 +78,7 @@ namespace CloudTierDemo
 
         private void toolStripButton_Stop_Click(object sender, EventArgs e)
         {
+            GlobalConfig.Stop();
             FilterWorker.StopService();
 
             toolStripButton_StartFilter.Enabled = true;
@@ -119,12 +122,14 @@ namespace CloudTierDemo
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            GlobalConfig.Stop();
             FilterWorker.StopService();
             Application.Exit();
         }
 
         private void demoForm_FormClosed(object sender, FormClosedEventArgs e)
         {
+            GlobalConfig.Stop();
             FilterWorker.StopService();
         }
      

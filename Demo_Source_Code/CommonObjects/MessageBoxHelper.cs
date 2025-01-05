@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace EaseFilter.CommonObjects
+namespace CloudTier.CommonObjects
 {
     public static class MessageBoxHelper
     {

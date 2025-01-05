@@ -1,4 +1,4 @@
-﻿namespace EaseFilter.CommonObjects
+﻿namespace CloudTier.CommonObjects
 {
     partial class SettingsForm
     {
@@ -45,9 +45,6 @@
             this.button_SelectExcludePID = new System.Windows.Forms.Button();
             this.textBox_ExcludePID = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.button_SelectIncludePID = new System.Windows.Forms.Button();
-            this.textBox_IncludePID = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.button_ApplyOptions = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.groupBox1.SuspendLayout();
@@ -67,9 +64,6 @@
             this.groupBox1.Controls.Add(this.button_SelectExcludePID);
             this.groupBox1.Controls.Add(this.textBox_ExcludePID);
             this.groupBox1.Controls.Add(this.label5);
-            this.groupBox1.Controls.Add(this.button_SelectIncludePID);
-            this.groupBox1.Controls.Add(this.textBox_IncludePID);
-            this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(602, 356);
@@ -79,7 +73,7 @@
             // checkBox_ReOpenFileOnReHydration
             // 
             this.checkBox_ReOpenFileOnReHydration.AutoSize = true;
-            this.checkBox_ReOpenFileOnReHydration.Location = new System.Drawing.Point(180, 242);
+            this.checkBox_ReOpenFileOnReHydration.Location = new System.Drawing.Point(180, 208);
             this.checkBox_ReOpenFileOnReHydration.Name = "checkBox_ReOpenFileOnReHydration";
             this.checkBox_ReOpenFileOnReHydration.Size = new System.Drawing.Size(284, 17);
             this.checkBox_ReOpenFileOnReHydration.TabIndex = 61;
@@ -131,7 +125,7 @@
             // 
             // textBox_Threads
             // 
-            this.textBox_Threads.Location = new System.Drawing.Point(180, 117);
+            this.textBox_Threads.Location = new System.Drawing.Point(180, 73);
             this.textBox_Threads.Name = "textBox_Threads";
             this.textBox_Threads.Size = new System.Drawing.Size(362, 20);
             this.textBox_Threads.TabIndex = 60;
@@ -140,7 +134,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(11, 117);
+            this.label4.Location = new System.Drawing.Point(11, 73);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(129, 13);
             this.label4.TabIndex = 59;
@@ -148,7 +142,7 @@
             // 
             // textBox_Timeout
             // 
-            this.textBox_Timeout.Location = new System.Drawing.Point(179, 159);
+            this.textBox_Timeout.Location = new System.Drawing.Point(179, 115);
             this.textBox_Timeout.Name = "textBox_Timeout";
             this.textBox_Timeout.Size = new System.Drawing.Size(362, 20);
             this.textBox_Timeout.TabIndex = 58;
@@ -157,7 +151,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(11, 162);
+            this.label3.Location = new System.Drawing.Point(11, 118);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(152, 13);
             this.label3.TabIndex = 57;
@@ -165,7 +159,7 @@
             // 
             // textBox_MaximumFilterMessage
             // 
-            this.textBox_MaximumFilterMessage.Location = new System.Drawing.Point(180, 205);
+            this.textBox_MaximumFilterMessage.Location = new System.Drawing.Point(180, 161);
             this.textBox_MaximumFilterMessage.Name = "textBox_MaximumFilterMessage";
             this.textBox_MaximumFilterMessage.Size = new System.Drawing.Size(362, 20);
             this.textBox_MaximumFilterMessage.TabIndex = 41;
@@ -174,7 +168,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(11, 212);
+            this.label6.Location = new System.Drawing.Point(11, 168);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(162, 13);
             this.label6.TabIndex = 40;
@@ -182,7 +176,7 @@
             // 
             // button_SelectExcludePID
             // 
-            this.button_SelectExcludePID.Location = new System.Drawing.Point(548, 75);
+            this.button_SelectExcludePID.Location = new System.Drawing.Point(548, 31);
             this.button_SelectExcludePID.Name = "button_SelectExcludePID";
             this.button_SelectExcludePID.Size = new System.Drawing.Size(30, 20);
             this.button_SelectExcludePID.TabIndex = 38;
@@ -192,7 +186,7 @@
             // 
             // textBox_ExcludePID
             // 
-            this.textBox_ExcludePID.Location = new System.Drawing.Point(180, 75);
+            this.textBox_ExcludePID.Location = new System.Drawing.Point(180, 31);
             this.textBox_ExcludePID.Name = "textBox_ExcludePID";
             this.textBox_ExcludePID.ReadOnly = true;
             this.textBox_ExcludePID.Size = new System.Drawing.Size(361, 20);
@@ -201,38 +195,11 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(10, 75);
+            this.label5.Location = new System.Drawing.Point(10, 31);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(110, 13);
             this.label5.TabIndex = 36;
             this.label5.Text = "Excluded process IDs";
-            // 
-            // button_SelectIncludePID
-            // 
-            this.button_SelectIncludePID.Location = new System.Drawing.Point(549, 35);
-            this.button_SelectIncludePID.Name = "button_SelectIncludePID";
-            this.button_SelectIncludePID.Size = new System.Drawing.Size(30, 20);
-            this.button_SelectIncludePID.TabIndex = 34;
-            this.button_SelectIncludePID.Text = "...";
-            this.button_SelectIncludePID.UseVisualStyleBackColor = true;
-            this.button_SelectIncludePID.Click += new System.EventHandler(this.button_SelectIncludePID_Click);
-            // 
-            // textBox_IncludePID
-            // 
-            this.textBox_IncludePID.Location = new System.Drawing.Point(180, 35);
-            this.textBox_IncludePID.Name = "textBox_IncludePID";
-            this.textBox_IncludePID.ReadOnly = true;
-            this.textBox_IncludePID.Size = new System.Drawing.Size(361, 20);
-            this.textBox_IncludePID.TabIndex = 33;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(10, 35);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(107, 13);
-            this.label1.TabIndex = 32;
-            this.label1.Text = "Included process IDs";
             // 
             // button_ApplyOptions
             // 
@@ -269,9 +236,6 @@
         private System.Windows.Forms.Button button_SelectExcludePID;
         private System.Windows.Forms.TextBox textBox_ExcludePID;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Button button_SelectIncludePID;
-        private System.Windows.Forms.TextBox textBox_IncludePID;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button button_ApplyOptions;
         private System.Windows.Forms.TextBox textBox_MaximumFilterMessage;
         private System.Windows.Forms.Label label6;

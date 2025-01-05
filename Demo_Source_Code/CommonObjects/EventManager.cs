@@ -12,7 +12,7 @@ using System.Globalization;
 ///
 ///
 
-namespace EaseFilter.CommonObjects
+namespace CloudTier.CommonObjects
 {
     public enum EventLevel
     {
@@ -401,15 +401,7 @@ namespace EaseFilter.CommonObjects
                 {
                     Console.WriteLine("Log message exception:" + ex.Message + ".\r\nMessage:" + message);
                 }
-
-                try
-                {
-                    SendMessageToFile(message);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Write message exception:" + ex.Message + ".\r\nMessage:" + message);
-                }
+              
             }
         }
     }

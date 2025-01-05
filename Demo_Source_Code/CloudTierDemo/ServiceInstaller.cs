@@ -20,7 +20,8 @@ using System.ComponentModel;
 using System.Configuration.Install;
 using System.ServiceProcess;
 
-using EaseFilter.CommonObjects;
+using CloudTier.CommonObjects;
+using CloudTier.FilterControl;
 
 namespace CloudTierDemo
 {

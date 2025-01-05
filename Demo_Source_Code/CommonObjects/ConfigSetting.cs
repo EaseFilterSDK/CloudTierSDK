@@ -3,7 +3,7 @@ using System.Configuration;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace EaseFilter.CommonObjects
+namespace CloudTier.CommonObjects
 {
 
     public class ConfigSetting

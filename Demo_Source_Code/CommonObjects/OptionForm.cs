@@ -19,7 +19,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 
-namespace EaseFilter.CommonObjects
+using CloudTier.FilterControl;
+
+namespace CloudTier.CommonObjects
 {
     public partial class OptionForm : Form
     {
@@ -69,32 +71,6 @@ namespace EaseFilter.CommonObjects
 
             switch (optionType)
             {
-                case OptionType.EventNotification:
-                    {
-                        listView1.Clear();		//clear control
-                        //create column header for ListView
-                        listView1.Columns.Add("Select file event type", 200, System.Windows.Forms.HorizontalAlignment.Left);
-
-                        eventNotification = uint.Parse(value);
-
-                        foreach (FilterAPI.EVENTTYPE eventType in Enum.GetValues(typeof(FilterAPI.EVENTTYPE)))
-                        {
-                            string item = eventType.ToString();
-
-                            ListViewItem lvItem = new ListViewItem(item, 0);
-                            lvItem.Tag = eventType;
-
-                            if ((eventNotification & (uint)eventType) > 0)
-                            {
-                                lvItem.Checked = true;
-                            }
-
-                            listView1.Items.Add(lvItem);
-                        }
-
-                        break;
-                    }
-
                 case OptionType.FileAttribute:
                     {
                         listView1.Clear();		//clear control
@@ -147,6 +123,12 @@ namespace EaseFilter.CommonObjects
                             item[0] = processlist[i].Id.ToString();
                             item[1] = processlist[i].ProcessName;
 
+                            if (processlist[i].Id == 0)
+                            {
+                                //this is idle process, skip it.
+                                continue;
+                            }
+
                             ListViewItem lvItem = new ListViewItem(item, 0);
 
                             lvItem.Tag = processlist[i].Id;
@@ -156,7 +138,27 @@ namespace EaseFilter.CommonObjects
                                 lvItem.Checked = true;
                             }
 
-                            listView1.Items.Add(lvItem);
+                            if (i > 0)
+                            {
+                                for (int k = 0; k < i; k++)
+                                {
+                                    if ((int)listView1.Items[k].Tag > processlist[i].Id)
+                                    {
+                                        listView1.Items.Insert(k, lvItem);
+                                        break;
+                                    }
+                                }
+
+                                if (listView1.Items.Count == i)
+                                {
+                                    listView1.Items.Insert(i, lvItem);
+                                }
+
+                            }
+                            else
+                            {
+                                listView1.Items.Insert(i, lvItem);
+                            }
 
                         }
 

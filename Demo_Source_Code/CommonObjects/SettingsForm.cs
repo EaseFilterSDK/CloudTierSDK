@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace EaseFilter.CommonObjects
+namespace CloudTier.CommonObjects
 {
     public partial class SettingsForm : Form
     {
@@ -27,17 +27,7 @@ namespace EaseFilter.CommonObjects
                 radioButton_Rehydrate.Checked = GlobalConfig.RehydrateFileOnFirstRead;
                 radioButton_CacheFile.Checked = GlobalConfig.ReturnCacheFileName;
                 radioButton_Block.Checked = GlobalConfig.ReturnBlockData;
-                checkBox_ReOpenFileOnReHydration.Checked = GlobalConfig.ReOpenFileOneReHydration;
-
-                foreach (uint pid in GlobalConfig.IncludePidList)
-                {
-                    if (textBox_IncludePID.Text.Length > 0)
-                    {
-                        textBox_IncludePID.Text += ";";
-                    }
-
-                    textBox_IncludePID.Text += pid.ToString();
-                }
+                checkBox_ReOpenFileOnReHydration.Checked = GlobalConfig.ByPassWriteEventOnReHydration;
 
                 foreach (uint pid in GlobalConfig.ExcludePidList)
                 {
@@ -63,30 +53,13 @@ namespace EaseFilter.CommonObjects
             try
             {
 
-                GlobalConfig.ConnectionTimeOut = uint.Parse(textBox_Timeout.Text);
+                GlobalConfig.ConnectionTimeOut = int.Parse(textBox_Timeout.Text);
                 GlobalConfig.FilterConnectionThreads = uint.Parse(textBox_Threads.Text);
                 GlobalConfig.MaximumFilterMessages = int.Parse(textBox_MaximumFilterMessage.Text);
                 GlobalConfig.RehydrateFileOnFirstRead = radioButton_Rehydrate.Checked;
                 GlobalConfig.ReturnCacheFileName = radioButton_CacheFile.Checked;
                 GlobalConfig.ReturnBlockData = radioButton_Block.Checked;
-                GlobalConfig.ReOpenFileOneReHydration = checkBox_ReOpenFileOnReHydration.Checked;
-
-                List<uint> inPids = new List<uint>();
-                if (textBox_IncludePID.Text.Length > 0)
-                {
-                    if (textBox_IncludePID.Text.EndsWith(";"))
-                    {
-                        textBox_IncludePID.Text = textBox_IncludePID.Text.Remove(textBox_IncludePID.Text.Length - 1);
-                    }
-
-                    string[] pids = textBox_IncludePID.Text.Split(new char[] { ';' });
-                    for (int i = 0; i < pids.Length; i++)
-                    {
-                        inPids.Add(uint.Parse(pids[i].Trim()));
-                    }
-                }
-                 
-                GlobalConfig.IncludePidList = inPids;
+                GlobalConfig.ByPassWriteEventOnReHydration = checkBox_ReOpenFileOnReHydration.Checked;
 
                 List<uint> exPids = new List<uint>();
                 if (textBox_ExcludePID.Text.Length > 0)
@@ -116,16 +89,6 @@ namespace EaseFilter.CommonObjects
             }
         }
 
-        private void button_SelectIncludePID_Click(object sender, EventArgs e)
-        {
-
-            OptionForm optionForm = new OptionForm(OptionForm.OptionType.ProccessId, textBox_IncludePID.Text);
-
-            if (optionForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                textBox_IncludePID.Text = optionForm.ProcessId;
-            }
-        }
 
         private void button_SelectExcludePID_Click(object sender, EventArgs e)
         {

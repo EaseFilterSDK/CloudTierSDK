@@ -1,4 +1,4 @@
-﻿namespace EaseFilter.CommonObjects
+﻿namespace CloudTier.CommonObjects
 {
     partial class OptionForm
     {

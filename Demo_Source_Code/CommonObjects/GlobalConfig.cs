@@ -23,13 +23,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Reflection;
 
-namespace EaseFilter.CommonObjects
+namespace CloudTier.CommonObjects
 {
 
 
     public class GlobalConfig
     {
-
+       
         static Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
         public static string AssemblyPath = Path.GetDirectoryName(assembly.Location);
 
@@ -44,7 +44,7 @@ namespace EaseFilter.CommonObjects
         static string eventLogName = "EaseFilter";
 
         static uint filterConnectionThreads = 5;
-        static uint connectionTimeOut = 30; //seconds
+        static int connectionTimeOut = 30; //seconds
         static List<uint> includePidList = new List<uint>();
         static List<uint> excludePidList = new List<uint>();
 
@@ -68,6 +68,9 @@ namespace EaseFilter.CommonObjects
         public static bool isRunning = true;
         public static ManualResetEvent stopEvent = new ManualResetEvent(false);
 
+        static string licenseKey = "";
+        static long expireTime = 0;
+
 
         public static System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
 
@@ -89,6 +92,8 @@ namespace EaseFilter.CommonObjects
                 returnBlockData = ConfigSetting.Get("returnBlockData", returnBlockData);
                 reOpenFileOneReHydration = ConfigSetting.Get("reOpenFileOneReHydration", reOpenFileOneReHydration);
 
+                licenseKey = ConfigSetting.Get("licenseKey", licenseKey);
+                expireTime = ConfigSetting.Get("expireTime", expireTime);
             }
             catch (Exception ex)
             {
@@ -101,7 +106,42 @@ namespace EaseFilter.CommonObjects
             isRunning = false;
             stopEvent.Set();
 
-        }     
+        }      
+
+        public static string LicenseKey
+        {
+            get
+            {
+                //Purchase a license key with the link: http://www.easefilter.com/Order.htm
+                //Email us to request a trial key: info@easefilter.com //free email is not accepted.
+                string licenseKey = "";
+
+                if (string.IsNullOrEmpty(licenseKey))
+                {
+                    System.Windows.Forms.MessageBox.Show("You don't have a valid license key, Please contact support@easefilter.com to get a trial key.", "LicenseKey",
+                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                }
+
+
+                return licenseKey;
+              
+            }
+            set
+            {
+                licenseKey = value;
+                ConfigSetting.Set("licenseKey", value.ToString());
+            }
+        }
+
+        public static long ExpireTime
+        {
+            get { return expireTime; }
+            set
+            {
+                expireTime = value;
+                ConfigSetting.Set("expireTime", value.ToString());
+            }
+        }
      
         public static bool SaveConfigSetting()
         {
@@ -110,7 +150,6 @@ namespace EaseFilter.CommonObjects
             try
             {
                 ConfigSetting.Save();
-                SendConfigSettingsToFilter();
             }
             catch (Exception ex)
             {
@@ -251,7 +290,7 @@ namespace EaseFilter.CommonObjects
             set { excludePidList = value; }
         }
 
-        public static uint ConnectionTimeOut
+        public static int ConnectionTimeOut
         {
             get { return connectionTimeOut; }
             set 
@@ -301,9 +340,9 @@ namespace EaseFilter.CommonObjects
         }
 
         /// <summary>
-        /// if this flag is true, the filter driver will reopen the file when the stub file was rehydrated.
+        /// if this flag is true, the filter driver will reopen the file when the stub file was rehydrated to bypass the write event for monitor filter driver.
         /// </summary>
-        public static bool ReOpenFileOneReHydration
+        public static bool ByPassWriteEventOnReHydration
         {
             get { return reOpenFileOneReHydration; }
             set
@@ -313,57 +352,6 @@ namespace EaseFilter.CommonObjects
             }
         }
 
-        public static string LicenseKey
-        {
-            get
-            {
-                //Purchase a license key with the link: http://www.easefilter.com/Order.htm
-                //Email us to request a trial key: info@easefilter.com //free email is not accepted.
-                string licenseKey = "";
-
-                if (string.IsNullOrEmpty(licenseKey))
-                {
-                    System.Windows.Forms.MessageBox.Show("You don't have a valid license key, Please contact support@easefilter.com to get a trial key.", "LicenseKey",
-                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
-                }
-
-
-                return licenseKey;
-                       
-            }
-        }
-
-        public static void SendConfigSettingsToFilter()
-        {
-            try
-            {
-                FilterAPI.ResetConfigData();
-
-                FilterAPI.SetConnectionTimeout(connectionTimeOut);
-
-                uint boolConfig = 0;
-                if (reOpenFileOneReHydration)
-                {
-                    boolConfig = (uint)FilterAPI.BooleanConfig.ENABLE_REOPEN_FILE_ON_REHYDRATION;                    
-                }
-
-                FilterAPI.SetBooleanConfig(boolConfig);
-
-                foreach (uint includedPid in includePidList)
-                {
-                    FilterAPI.AddIncludedProcessId(includedPid);
-                }
-
-                foreach (uint excludedPid in excludePidList)
-                {
-                    FilterAPI.AddExcludedProcessId(excludedPid);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                EventManager.WriteMessage(502, "SendConfigSettingsToFilter", CommonObjects.EventLevel.Error, "Send config settings to filter failed with error " + ex.Message);
-            }
-        }
+       
     }
 }
