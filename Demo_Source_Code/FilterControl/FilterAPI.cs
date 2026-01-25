@@ -13,7 +13,7 @@ using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Security.Cryptography;
+using Microsoft.Win32.SafeHandles;
 
 namespace CloudTier.FilterControl
 {
@@ -30,6 +30,9 @@ namespace CloudTier.FilterControl
         public const int MAX_MESSAGE_LENGTH = 65536;
         public const int MAX_PATH = 260;
         public const int MAX_ERROR_MESSAGE_SIZE = 1024;
+
+        //file attribute to for the application to recall the data on access for stub file.
+        public const uint FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000;
 
         public const uint MESSAGE_SEND_VERIFICATION_NUMBER = 0xFF000001;
 
@@ -91,7 +94,7 @@ namespace CloudTier.FilterControl
         {
             ENABLE_NO_RECALL_FLAG = 0x00000001, //for easetag, if it was true, after the reparsepoint file was opened, it won't restore data back for read and write.
             DISABLE_FILTER_UNLOAD_FLAG = 0x00000002, //if it is true, the filter driver can't be unloaded.
-            ENABLE_REOPEN_FILE_ON_REHYDRATION = 0x00000400, //if it is enabled, it will reopen the file when rehydration of the stub file.
+            ENABLE_REOPEN_FILE_ON_REHYDRATION = 0x00000400, //if it is enabled, it will reopen the file during rehydration of the stub file.
 
         }
 
@@ -128,7 +131,7 @@ namespace CloudTier.FilterControl
             public uint DataBufferLength;   //the data buffer length.
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_MESSAGE_LENGTH)]
             public byte[] DataBuffer;       //the data buffer which contains read/write/query information/set information data.
-            public uint VerificationNumber; //the verification number which verifiys the data structure integerity.
+            public uint VerificationNumber; //the verification number which verifies the data structure integerity.
         }
 
         public enum FilterStatus : uint
@@ -155,6 +158,13 @@ namespace CloudTier.FilterControl
          uint accessFlag,
         [MarshalAs(UnmanagedType.LPWStr)]string filterMask,
         [MarshalAs(UnmanagedType.LPWStr)] string reparseMask);
+
+        /// <summary>
+        /// Get the computerId 
+        /// </summary>
+        /// <returns></returns>
+        [DllImport("FilterAPI.dll", SetLastError = true)]
+        public static extern uint GetComputerId();
 
         /// <summary>
         /// Monitor the create/delete/rename event of the files under the register folder
@@ -333,9 +343,6 @@ namespace CloudTier.FilterControl
               int tagDataLength,
               IntPtr tagData);
 
-
-
-
         public static bool AddTagData(
               IntPtr fileHandle,
               byte[] tagData)
@@ -379,6 +386,51 @@ namespace CloudTier.FilterControl
             return errorMessage;
         }
 
+        /// <summary>
+        /// Create sparse file,it is for block download feature to support the application only wants to download some blocks instead of the whole file.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="fileSize"></param>
+        /// <param name="creationTime"></param>
+        /// <param name="fileAttributes"></param>
+        /// <returns></returns>
+        public static FileStream CreateSparseFile(string fileName, long fileSize, DateTime creationTime, uint fileAttributes, bool overwriteIfExist)
+        {
+            FileStream fs = null;
+
+            try
+            {
+
+                IntPtr fileHandle = IntPtr.Zero;
+                bool ret = CreateStubFile(fileName, fileSize, fileAttributes, 0, IntPtr.Zero, overwriteIfExist, ref fileHandle);
+                if (!ret)
+                {
+                    string lastError = GetLastErrorMessage();
+                    throw new Exception(lastError);
+                }
+
+                SafeFileHandle shFile = new SafeFileHandle(fileHandle, true);
+                fs = new FileStream(shFile, FileAccess.ReadWrite);
+
+                File.SetCreationTime(fileName, creationTime);
+
+                fs.Seek(0, SeekOrigin.Begin);
+            }
+            catch (Exception ex)
+            {
+                string lastError = "CreateSparseFile failed with error:" + ex.Message;
+
+                if (fs != null)
+                {
+                    fs.Close();
+                    fs = null;
+                }
+
+                throw new Exception(lastError);
+            }
+
+            return fs;
+        }
 
 
         public static bool DecodeUserInfo(MessageSendData messageSend, out string userName, out string processName)

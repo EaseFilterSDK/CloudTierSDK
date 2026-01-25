@@ -36,7 +36,6 @@ namespace CloudTierDemo
 
         ~CloudTierDemoForm()
         {
-            GlobalConfig.Stop();
             FilterWorker.StopService();
         }
 
@@ -78,7 +77,6 @@ namespace CloudTierDemo
 
         private void toolStripButton_Stop_Click(object sender, EventArgs e)
         {
-            GlobalConfig.Stop();
             FilterWorker.StopService();
 
             toolStripButton_StartFilter.Enabled = true;
@@ -122,14 +120,12 @@ namespace CloudTierDemo
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            GlobalConfig.Stop();
             FilterWorker.StopService();
             Application.Exit();
         }
 
         private void demoForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            GlobalConfig.Stop();
             FilterWorker.StopService();
         }
      
@@ -143,5 +139,10 @@ namespace CloudTierDemo
             }
         }
 
+        private void toolStripButton_Help_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start("https://www.easefilter.com/cloud/cloudtier-storage-tiering-demo.htm");
+        }
+    
     }
 }

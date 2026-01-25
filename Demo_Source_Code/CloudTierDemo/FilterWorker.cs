@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Text;
 using System.IO;
-using Microsoft.Win32.SafeHandles;
-using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Windows.Forms;
 
 using CloudTier.CommonObjects;
@@ -36,7 +33,7 @@ namespace CloudTierDemo
             {
                 //Purchase a license key with the link: http://www.easefilter.com/Order.htm
                 //Email us to request a trial key: info@easefilter.com //free email is not accepted.
-                string licenseKey =  GlobalConfig.LicenseKey;
+                string licenseKey = GlobalConfig.LicenseKey;
 
                 if(!filterControl.StartFilter((int)GlobalConfig.FilterConnectionThreads, GlobalConfig.ConnectionTimeOut, licenseKey, ref lastError))
                 {
@@ -44,6 +41,7 @@ namespace CloudTierDemo
                 }
 
                 filterControl.ByPassWriteEventOnReHydration = GlobalConfig.ByPassWriteEventOnReHydration;
+                filterControl.ExcludeProcessIdList = GlobalConfig.ExcludePidList;
 
                 if (!filterControl.SendConfigSettingsToFilter(ref lastError))
                 {
@@ -68,7 +66,7 @@ namespace CloudTierDemo
         public static bool StopService()
         {
             GlobalConfig.Stop();
-            FilterAPI.StopFilter();
+            filterControl.StopFilter();
 
             return true;
         }
@@ -80,8 +78,9 @@ namespace CloudTierDemo
             try
             {
 
-                //here the data buffer is the reparse point tag data, in our test, we assume the reparse point tag data is the cache file name of the stub file.
+                //here the data buffer is the reparse point tag data, in our test, we added the test source file name of the stub file as the tag data.
                 string cacheFileName = Encoding.Unicode.GetString(e.TagData);
+                //remove the extra data of the file name.
                 cacheFileName = cacheFileName.Substring(0, e.TagDataLength / 2);
 
                 if (e.MessageType == FilterAPI.MessageType.MESSAGE_TYPE_RESTORE_FILE_TO_CACHE)

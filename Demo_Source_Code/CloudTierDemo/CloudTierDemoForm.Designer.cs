@@ -44,6 +44,7 @@
             this.toolStripButton_ClearMessage = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton_Help = new System.Windows.Forms.ToolStripButton();
             this.listView_Info = new System.Windows.Forms.ListView();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -75,7 +76,7 @@
             this.uninstallDriverToolStripMenuItem,
             this.installDriverToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(47, 20);
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
             // 
             // createTestStubFileToolStripMenuItem
@@ -102,7 +103,7 @@
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(38, 20);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -115,7 +116,8 @@
             this.toolStripSeparator2,
             this.toolStripButton_ClearMessage,
             this.toolStripSeparator3,
-            this.toolStripButton1});
+            this.toolStripButton1,
+            this.toolStripButton_Help});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(974, 25);
@@ -173,10 +175,20 @@
             this.toolStripButton1.Text = "Event viewer";
             this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
             // 
+            // toolStripButton_Help
+            // 
+            this.toolStripButton_Help.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_Help.Image")));
+            this.toolStripButton_Help.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_Help.Name = "toolStripButton_Help";
+            this.toolStripButton_Help.Size = new System.Drawing.Size(52, 22);
+            this.toolStripButton_Help.Text = "Help";
+            this.toolStripButton_Help.Click += new System.EventHandler(this.toolStripButton_Help_Click);
+            // 
             // listView_Info
             // 
             this.listView_Info.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listView_Info.FullRowSelect = true;
+            this.listView_Info.HideSelection = false;
             this.listView_Info.HoverSelection = true;
             this.listView_Info.LabelEdit = true;
             this.listView_Info.Location = new System.Drawing.Point(0, 49);
@@ -228,6 +240,7 @@
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem uninstallDriverToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem installDriverToolStripMenuItem;
+        private System.Windows.Forms.ToolStripButton toolStripButton_Help;
     }
 }
 

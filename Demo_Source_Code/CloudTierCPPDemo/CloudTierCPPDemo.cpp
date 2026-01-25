@@ -74,7 +74,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//Purchase a license key with the link: http://www.EaseFilter.com/Order.htm
     //Email us to request a trial key: info@EaseFilter.com //free email is not accepted.
 
-	char*	registerKey = "***************************************************";
+	char*	registerKey = "8C7E9-CEE99-87533-C6B6F-C1B30-3FC32";
 
 	if(argc <= 1)
 	{

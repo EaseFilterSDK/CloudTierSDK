@@ -76,7 +76,7 @@ namespace CloudTier.FilterControl
         /// </summary>
         public uint MessageId { get; set; }
         /// <summary>
-        /// The Message Id.
+        /// The Message type of the request.
         /// </summary>
         public FilterAPI.MessageType MessageType { get; set; }
         /// <summary>
@@ -494,8 +494,11 @@ namespace CloudTier.FilterControl
         {
             try
             {
-                FilterRequestEventArgs filterRequestEventArgs = new FilterRequestEventArgs(sendDataPtr, replyDataPtr);
-                OnFilterRequest(null, filterRequestEventArgs);
+                if (null != OnFilterRequest)
+                {
+                    FilterRequestEventArgs filterRequestEventArgs = new FilterRequestEventArgs(sendDataPtr, replyDataPtr);
+                    OnFilterRequest(null, filterRequestEventArgs);
+                }
             }
             catch (Exception ex)
             {
